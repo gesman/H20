@@ -14,7 +14,11 @@ Escape from bloated, opinionated, slow, agent-specific harnesses with hairy depe
 4. Execute one plan per fresh session:
    `@H20/3-executor.md @H20/01-my-feature/PLAN-01--do-this.md`
 5. Repeat plan-by-plan. Clear context between runs. If execution writes `BLOCKED.md`, stop and either fix the issue, re-plan with `@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`, or start a new milestone with the old `raw-prompt.txt` plus `BLOCKED.md`.
-6. Optional: if you use Claude Code and want a thin loop wrapper around repeated executor runs, use `./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --steps 2`. This is a non-core convenience script, not part of the H20 contract. It repeatedly invokes the next pending plan(s), passes `AUTOEXEC_MODE=1`, and stops on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
+6. Optional: if you use Claude Code and want a thin loop wrapper around repeated executor runs, use:
+
+   `./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --model opus --skiphuman [--steps 2]`
+
+   This is a non-core convenience script, not part of the H20 contract. It repeatedly invokes the next pending plan(s), passes `AUTOEXEC_MODE=1`, and stops on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
 
 ## Why H20
 
