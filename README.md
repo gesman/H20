@@ -6,7 +6,7 @@ Escape from bloated, opinionated, slow, agent-specific harnesses with hairy depe
 
 ## Super quick start
 
-1. Copy `./H20/` into your project root.
+1. Copy `./H20/` into your project root. Start your favorite coding agent, and:
 2. Create a milestone:
    `@H20/1-create-prompt.md "Build me a website"` or `@H20/1-create-prompt.md @raw-prompt.txt`
 3. Plan it:
