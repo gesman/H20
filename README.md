@@ -1,4 +1,4 @@
-# H20 — lean coding-agent harness
+# H20 — Lean coding-agent harness
 
 H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. 
 
