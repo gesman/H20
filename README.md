@@ -14,11 +14,13 @@ Escape from bloated, opinionated, slow, agent-specific harnesses with hairy depe
 4. Execute one plan per fresh session:
    `@H20/3-executor.md @H20/01-my-feature/PLAN-01--do-this.md`
 5. Repeat plan-by-plan. Clear context between runs. If execution writes `BLOCKED.md`, stop and either fix the issue, re-plan with `@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`, or start a new milestone with the old `raw-prompt.txt` plus `BLOCKED.md`.
-6. Optional: if you use Claude Code and want a thin loop wrapper around repeated executor runs, use:
+6. Optional: if you use Claude Code or Codex and want a thin loop wrapper around repeated executor runs, use one of:
 
    `./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --model opus --skiphuman [--steps 2]`
+   
+   `./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.3-codex --skiphuman [--steps 2]`
 
-   This is a non-core convenience script, not part of the H20 contract. It repeatedly invokes the next pending plan(s), passes `AUTOEXEC_MODE=1`, and stops on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
+   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending plan(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
 
 ## Why H20
 
@@ -94,6 +96,7 @@ Inside a target project using H20:
 ├── Extras/                    (optional convenience scripts; non-contractual)
 │   ├── 2a-env-checker
 │   ├── 3-autoexec-claude
+│   ├── 3-autoexec-codex
 │   ├── README.md
 │   └── helpers/               (support files used by optional extras)
 ├── README.md
@@ -270,6 +273,41 @@ Behavior:
 
 - Streaming output is on by default; `--no-stream` disables it.
 - The wrapper defaults Claude Code permissions to `--dangerously-skip-permissions`.
+- It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
+- `BLOCKED.md` stops the loop immediately.
+- If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.
+- Without `--skiphuman`, the loop stops when a human-only verification checkpoint is reached.
+- With `--skiphuman`, those human-only checks are forced to `⚠ skipped`, matching the executor overlay semantics documented above.
+
+### 3-autoexec-codex
+
+Purpose: Codex CLI wrapper that executes the next pending H20 plan(s) for one milestone in a loop using the current user's Codex login. This helper is Codex-specific by design.
+
+Syntax:
+
+```bash
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature [--steps N] [--model <model-id>] [--skiphuman]
+```
+
+Accepted milestone path styles include both `./H20/01-my-feature` and `./01-my-feature`.
+
+Examples:
+
+```bash
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --steps 2
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.3-codex
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --skiphuman
+```
+
+Behavior:
+
+- It uses the current user's Codex login (`ChatGPT` or API key).
+- It re-runs Codex in a fresh ephemeral session per plan.
+- Codex CLI progress output uses its normal defaults.
+- The wrapper disables approval prompts with `-a never`.
+- The wrapper defaults sandboxing to `--sandbox danger-full-access`.
+- The wrapper defaults session persistence to `--ephemeral`.
 - It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
 - `BLOCKED.md` stops the loop immediately.
 - If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.
