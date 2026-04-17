@@ -1,6 +1,6 @@
 # H20 — lean coding-agent harness
 
-H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. There is no CLI, no hooks, no runtime. Copy four files, paste into your coding agent of choice, done.
+H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
 
 ## Why H20
 
@@ -11,7 +11,7 @@ H20 is three markdown prompts and a directory convention for coding agents with 
 ## Design axioms
 
 1. **Coding-agent-agnostic.** The three meta-prompts are written for coding agents with filesystem access (Claude Code, Codex, and similar tools). No agent-specific syntax ever.
-2. **Zero install, zero runtime.** Copy-paste is the install. No Node, Python, bash, or dependencies.
+2. **Zero install, zero runtime in the core.** Copy-paste is the install. No Node, Python, bash, or dependencies are required for the core flow. Optional helpers under `./H20/Extras/` are convenience tooling, not part of the contract.
 3. **Self-contained inside `./H20/`.** Every artifact H20 touches — meta-prompts, raw prompts, plans, summaries — lives under `./H20/` of the target project. Nothing spills to the project root.
 4. **Numbered milestones track evolution.** `./H20/01-<kebab>/`, `./H20/02-<kebab>/`, … give you a scannable history of what you've built and when.
 5. **File-existence recovery.** A plan is "done" iff its `PLAN-NN--DONE.md` exists. No state machinery, no manifest drift.
@@ -73,6 +73,7 @@ Inside a target project using H20:
 ├── 1-create-prompt.md         (meta-prompt; copy from source or paste)
 ├── 2-planner.md               (meta-prompt)
 ├── 3-executor.md              (meta-prompt)
+├── Extras/                    (optional convenience scripts; non-contractual)
 ├── README.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
@@ -165,6 +166,15 @@ Do **not** use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks,
 `BLOCKED.md` is consumed only when the user explicitly passes it into `2-planner.md` or `1-create-prompt.md`. Its presence on disk alone does not auto-replan anything.
 
 After the user chooses a recovery path and materializes it, delete `BLOCKED.md`. If the milestone is abandoned entirely, keeping `BLOCKED.md` as a tombstone is fine.
+
+## Optional executor overlays
+
+Optional convenience wrappers may append literal control lines after the plan path in executor input:
+
+- `AUTOEXEC_MODE=1` — capability requests in executor Step 3 are treated as implicit `skip`; if the missing capability makes execution unsafe, the executor should write `BLOCKED.md` and stop.
+- `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this explicit marker, human-only verification still pauses for user input even in autoexec mode.
+
+These overlays do **not** change the done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
 
 ## Using H20 on a project
 

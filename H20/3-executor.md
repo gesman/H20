@@ -13,6 +13,9 @@ If you were invoked by file references instead of pasted text, use this contract
 - If exactly one `PLAN-NN--*.md` file is present, execute that plan.
 - If multiple candidate plan files are present, STOP and ask the user which one to execute.
 - If no plan file is present, STOP and ask for one.
+- Optional execution overlays may also be present as literal control lines after the plan path:
+  - `AUTOEXEC_MODE=1` — an unattended wrapper is driving this run.
+  - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be waived automatically for this run.
 
 ---
 
@@ -73,6 +76,8 @@ Reply "ok" to give me a moment to connect, or "skip" to proceed best-effort. Sil
 
 On `ok`: pause, let the user install/enable, then resume. On `skip` or silence: proceed with what you have and note the tradeoff in the done-file's `## Summary`. Mid-execution, if a substantial new need emerges, you may ask once more — judge carefully: interruptions cost more than small workarounds.
 
+If `AUTOEXEC_MODE=1` is present in the executor input, treat every capability request as an implicit `skip` and proceed best-effort without waiting. If the missing capability would make the plan unsafe, unreliable, or materially under-verified, write `BLOCKED.md` and stop instead of asking.
+
 If no tools would materially help (stdlib-only, tooling sufficient), say so in one line — "No additional capabilities needed — proceeding." — and move to Step 4.
 
 ---
@@ -114,6 +119,8 @@ If a verification item needs human judgment (UI, browser flow, visual output, in
 
 - `approved` — the human-only check passes.
 - `skip` — the human-only check is explicitly waived.
+
+If `AUTOEXEC_MODE=1` is present and `AUTOEXEC_SKIP_HUMAN=1` is absent, still stop after setup and hand off exactly as above. If both `AUTOEXEC_MODE=1` and `AUTOEXEC_SKIP_HUMAN=1` are present, do the full automatable setup, record the human-only item as `⚠ skipped <check>`, mention the forced skip in the done-file summary, and continue. Never auto-skip human verification without the explicit `AUTOEXEC_SKIP_HUMAN=1` marker.
 
 Do not write the done-file until every human-only verification item is either `approved` or `skip`. If the user skips, record that clearly as `⚠ skipped` in the verification results and mention it in the done-file summary. If a check fails, first state the most likely falsifiable cause in one sentence and check it against the observed failure. If the fix is clearly within the plan's scope, apply the minimal change and rerun the failed checks. If the failure reveals plan ambiguity, missing prerequisites, or out-of-scope work, STOP. Do not write a done-file for a partial pass.
 

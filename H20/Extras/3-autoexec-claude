@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+H20_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+EXECUTOR_PROMPT="$H20_DIR/3-executor.md"
+STREAM_HELPER="$SCRIPT_DIR/helpers/claude-stream"
+
+RED=$'\033[31m'
+GREEN=$'\033[32m'
+YELLOW=$'\033[33m'
+BLUE=$'\033[34m'
+MAGENTA=$'\033[35m'
+CYAN=$'\033[36m'
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+RESET=$'\033[0m'
+
+MILESTONE=""
+MODEL="sonnet"
+STREAM=1
+STEP_LIMIT=0
+SKIP_HUMAN=0
+
+usage() {
+    cat <<EOF
+${BOLD}${CYAN}3-autoexec-claude${RESET} ${DIM}(optional H20 extra; Claude-specific)${RESET}
+
+${BOLD}Purpose${RESET}
+  Execute the next pending H20 plan(s) for one milestone by re-running Claude Code
+  headlessly in a loop. This uses the current user's Claude subscription login.
+
+${BOLD}Syntax${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}sonnet|opus|<full-model>${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--no-stream${RESET}]
+  milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
+
+${BOLD}Examples${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--steps${RESET} ${MAGENTA}2${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}opus${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--skiphuman${RESET}
+
+${BOLD}Behavior${RESET}
+  ${GREEN}streaming output is ON by default${RESET}
+  ${GREEN}permissions default to --dangerously-skip-permissions${RESET}
+  ${GREEN}capability requests become implicit skip via AUTOEXEC_MODE=1${RESET}
+  ${GREEN}BLOCKED.md stops the loop immediately${RESET}
+  ${GREEN}missing done-file after a run is treated as a handoff / stop${RESET}
+
+${BOLD}Human verification${RESET}
+  without ${YELLOW}--skiphuman${RESET}: stop and hand off when a human-only check is reached
+  with    ${YELLOW}--skiphuman${RESET}: pass AUTOEXEC_SKIP_HUMAN=1 and force those checks to be recorded as skipped
+EOF
+}
+
+note() {
+    printf "%s%s%s\n" "$BLUE" "$1" "$RESET"
+}
+
+warn() {
+    printf "%s%s%s\n" "$YELLOW" "$1" "$RESET"
+}
+
+fail() {
+    printf "%s%s%s\n" "$RED" "$1" "$RESET" >&2
+    exit 1
+}
+
+require_command() {
+    local cmd="$1"
+    command -v "$cmd" >/dev/null 2>&1 || fail "Missing required command: $cmd"
+}
+
+abs_path() {
+    local target="$1"
+    python3 - "$target" <<'PY'
+import os
+import sys
+print(os.path.abspath(sys.argv[1]))
+PY
+}
+
+resolve_milestone_path() {
+    local target="$1"
+    local trimmed="${target#./}"
+    if [[ -d "$target" ]]; then
+        abs_path "$target"
+        return 0
+    fi
+    if [[ -d "$H20_DIR/$trimmed" ]]; then
+        abs_path "$H20_DIR/$trimmed"
+        return 0
+    fi
+    return 1
+}
+
+plan_done_file() {
+    local plan="$1"
+    local base num dir
+    base="$(basename "$plan")"
+    dir="$(dirname "$plan")"
+    if [[ "$base" =~ ^PLAN-([0-9][0-9])--.*\.md$ ]]; then
+        num="${BASH_REMATCH[1]}"
+        printf "%s/PLAN-%s--DONE.md\n" "$dir" "$num"
+        return 0
+    fi
+    return 1
+}
+
+next_pending_plan() {
+    local milestone="$1"
+    local plan done
+    while IFS= read -r plan; do
+        done="$(plan_done_file "$plan")" || continue
+        if [[ ! -f "$done" ]]; then
+            printf "%s\n" "$plan"
+            return 0
+        fi
+    done < <(find "$milestone" -maxdepth 1 -type f -name 'PLAN-[0-9][0-9]--*.md' ! -name 'PLAN-[0-9][0-9]--DONE.md' | sort)
+    return 1
+}
+
+build_prompt() {
+    local plan="$1"
+    cat "$EXECUTOR_PROMPT"
+    printf "\n%s\n" "$plan"
+    printf "AUTOEXEC_MODE=1\n"
+    if [[ "$SKIP_HUMAN" -eq 1 ]]; then
+        printf "AUTOEXEC_SKIP_HUMAN=1\n"
+    fi
+}
+
+run_claude_for_plan() {
+    local prompt="$1"
+    if [[ "$STREAM" -eq 1 ]]; then
+        [[ -x "$STREAM_HELPER" ]] || fail "Missing stream helper: $STREAM_HELPER"
+        if ! printf "%s" "$prompt" | "$STREAM_HELPER" --model "$MODEL" --dangerously-skip-permissions --; then
+            return 1
+        fi
+    else
+        if ! printf "%s" "$prompt" | claude --print --output-format text --verbose --model "$MODEL" --dangerously-skip-permissions --; then
+            return 1
+        fi
+    fi
+}
+
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 0
+fi
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --milestone)
+            [[ "$#" -ge 2 ]] || fail "Expected a path after --milestone"
+            MILESTONE="$2"
+            shift 2
+            ;;
+        --steps)
+            [[ "$#" -ge 2 ]] || fail "Expected a number after --steps"
+            STEP_LIMIT="$2"
+            [[ "$STEP_LIMIT" =~ ^[1-9][0-9]*$ ]] || fail "--steps expects a positive integer"
+            shift 2
+            ;;
+        --model)
+            [[ "$#" -ge 2 ]] || fail "Expected a model after --model"
+            MODEL="$2"
+            shift 2
+            ;;
+        --stream)
+            STREAM=1
+            shift
+            ;;
+        --no-stream)
+            STREAM=0
+            shift
+            ;;
+        --skiphuman)
+            SKIP_HUMAN=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "Unknown argument: $1"
+            ;;
+    esac
+done
+
+[[ -n "$MILESTONE" ]] || {
+    usage
+    exit 0
+}
+
+require_command claude
+require_command python3
+
+MILESTONE="$(resolve_milestone_path "$MILESTONE")" || fail "Milestone directory not found: $MILESTONE"
+[[ -f "$EXECUTOR_PROMPT" ]] || fail "Executor prompt not found: $EXECUTOR_PROMPT"
+
+BLOCKED_FILE="$MILESTONE/BLOCKED.md"
+if [[ -f "$BLOCKED_FILE" ]]; then
+    warn "${BOLD}BLOCKED.md already exists${RESET}${YELLOW} — stopping before any autoexec run${RESET}"
+    printf "  %s\n" "$BLOCKED_FILE"
+    exit 1
+fi
+
+START_TS="$(date +%s)"
+RUNS=0
+
+echo "${BOLD}${CYAN}Autoexec${RESET}"
+echo "  milestone: $MILESTONE"
+echo "  model: $MODEL"
+if [[ "$STEP_LIMIT" -eq 0 ]]; then
+    echo "  steps: all pending plans"
+else
+    echo "  steps: next $STEP_LIMIT plan(s)"
+fi
+if [[ "$STREAM" -eq 1 ]]; then
+    echo "  stream: on"
+else
+    echo "  stream: off"
+fi
+if [[ "$SKIP_HUMAN" -eq 1 ]]; then
+    echo "  human checks: force-skip"
+else
+    echo "  human checks: stop and hand off"
+fi
+echo "  permissions: dangerously-skip-permissions"
+
+while true; do
+    if [[ -f "$BLOCKED_FILE" ]]; then
+        warn ""
+        warn "${BOLD}BLOCKED.md detected${RESET}${YELLOW} — loop stopped${RESET}"
+        printf "  %s\n" "$BLOCKED_FILE"
+        exit 1
+    fi
+
+    if [[ "$STEP_LIMIT" -gt 0 && "$RUNS" -ge "$STEP_LIMIT" ]]; then
+        break
+    fi
+
+    PLAN="$(next_pending_plan "$MILESTONE" || true)"
+    if [[ -z "${PLAN:-}" ]]; then
+        break
+    fi
+
+    DONE_FILE="$(plan_done_file "$PLAN")" || fail "Could not derive done-file for plan: $PLAN"
+    RUNS=$((RUNS + 1))
+
+    echo ""
+    echo "${BOLD}${MAGENTA}Plan $RUNS${RESET}"
+    echo "  executing: $PLAN"
+    echo "  expecting: $DONE_FILE"
+
+    PROMPT="$(build_prompt "$PLAN")"
+    if ! run_claude_for_plan "$PROMPT"; then
+        warn ""
+        warn "${BOLD}Claude exited unsuccessfully${RESET}${YELLOW} — stopping for inspection${RESET}"
+        exit 1
+    fi
+
+    if [[ -f "$BLOCKED_FILE" ]]; then
+        warn ""
+        warn "${BOLD}Plan wrote BLOCKED.md${RESET}${YELLOW} — stopping${RESET}"
+        printf "  %s\n" "$BLOCKED_FILE"
+        exit 1
+    fi
+
+    if [[ -f "$DONE_FILE" ]]; then
+        note ""
+        note "${BOLD}Done-file written${RESET}${BLUE} — continuing${RESET}"
+        printf "  %s\n" "$DONE_FILE"
+        continue
+    fi
+
+    warn ""
+    warn "${BOLD}No done-file was written${RESET}${YELLOW} — treating this as a handoff / manual stop${RESET}"
+    printf "  plan: %s\n" "$PLAN"
+    printf "  expected done-file: %s\n" "$DONE_FILE"
+    if [[ "$SKIP_HUMAN" -eq 0 ]]; then
+        printf "  likely cause: human verification or another manual intervention point\n"
+    fi
+    exit 1
+done
+
+ELAPSED=$(( $(date +%s) - START_TS ))
+
+echo ""
+echo "${BOLD}${GREEN}Autoexec complete${RESET}"
+echo "  executed plans: $RUNS"
+if [[ -n "$(next_pending_plan "$MILESTONE" || true)" ]]; then
+    echo "  milestone status: pending plans remain"
+else
+    echo "  milestone status: no pending plans remain"
+fi
+echo "  elapsed seconds: $ELAPSED"

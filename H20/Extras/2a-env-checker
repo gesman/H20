@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+H20_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+RED=$'\033[31m'
+GREEN=$'\033[32m'
+YELLOW=$'\033[33m'
+BLUE=$'\033[34m'
+MAGENTA=$'\033[35m'
+CYAN=$'\033[36m'
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+RESET=$'\033[0m'
+
+TARGET=""
+MILESTONE=""
+PLAN=""
+
+usage() {
+    cat <<EOF
+${BOLD}${CYAN}2a-env-checker${RESET} ${DIM}(optional H20 extra; advisory only)${RESET}
+
+${BOLD}Purpose${RESET}
+  Scan a milestone's prompt / roadmap / plan files and list likely environment
+  capabilities worth validating before execution. This is a manual checklist.
+  It does ${BOLD}not${RESET} inspect your agent runtime, MCPs, or plugins.
+
+${BOLD}Syntax${RESET}
+  ${GREEN}./H20/Extras/2a-env-checker${RESET}
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/PLAN-02--x.md${RESET}
+
+${BOLD}Examples${RESET}
+  ${GREEN}./H20/Extras/2a-env-checker${RESET}
+    prints this syntax / help
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
+    scans unfinished plans inside that milestone
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
+    same as above, using a shorter milestone path
+  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/PLAN-02--ui.md${RESET}
+    scans that specific plan file
+
+${BOLD}Output${RESET}
+  color-coded checklist of likely helpful capabilities plus evidence lines pulled
+  from the milestone files, so you can validate the environment yourself.
+EOF
+}
+
+fail() {
+    printf "%s%s%s\n" "$RED" "$1" "$RESET" >&2
+    exit 1
+}
+
+abs_path() {
+    local target="$1"
+    python3 - "$target" <<'PY'
+import os
+import sys
+print(os.path.abspath(sys.argv[1]))
+PY
+}
+
+resolve_milestone_path() {
+    local target="$1"
+    local trimmed="${target#./}"
+    if [[ -d "$target" ]]; then
+        abs_path "$target"
+        return 0
+    fi
+    if [[ -d "$H20_DIR/$trimmed" ]]; then
+        abs_path "$H20_DIR/$trimmed"
+        return 0
+    fi
+    return 1
+}
+
+resolve_plan_path() {
+    local target="$1"
+    local trimmed="${target#./}"
+    if [[ -f "$target" ]]; then
+        abs_path "$target"
+        return 0
+    fi
+    if [[ -f "$H20_DIR/$trimmed" ]]; then
+        abs_path "$H20_DIR/$trimmed"
+        return 0
+    fi
+    return 1
+}
+
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 0
+fi
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            if [[ -z "$TARGET" ]]; then
+                TARGET="$1"
+                shift
+            else
+                fail "Expected exactly one positional target: milestone dir or plan file"
+            fi
+            ;;
+    esac
+done
+
+[[ -n "$TARGET" ]] || {
+    usage
+    exit 0
+}
+
+if PLAN="$(resolve_plan_path "$TARGET")"; then
+    [[ "$(basename "$PLAN")" =~ ^PLAN-[0-9][0-9]--.*\.md$ ]] || fail "Target file is not an H20 plan file: $PLAN"
+    MILESTONE="$(dirname "$PLAN")"
+elif MILESTONE="$(resolve_milestone_path "$TARGET")"; then
+    :
+else
+    fail "Target not found as milestone dir or plan file: $TARGET"
+fi
+
+FILES=()
+[[ -f "$MILESTONE/good-prompt.md" ]] && FILES+=("$MILESTONE/good-prompt.md")
+[[ -f "$MILESTONE/ROADMAP.md" ]] && FILES+=("$MILESTONE/ROADMAP.md")
+
+if [[ -n "$PLAN" ]]; then
+    FILES+=("$PLAN")
+else
+    while IFS= read -r file; do
+        FILES+=("$file")
+    done < <(find "$MILESTONE" -maxdepth 1 -type f -name 'PLAN-[0-9][0-9]--*.md' ! -name 'PLAN-[0-9][0-9]--DONE.md' | sort)
+fi
+
+[[ "${#FILES[@]}" -gt 0 ]] || fail "No prompt / roadmap / plan files found to scan"
+
+CAPABILITY_NAMES=(
+    "Browser automation / UI verification"
+    "Cloudflare access / tooling"
+    "GitHub / CI integration"
+    "Database / schema access"
+    "Credentials / external auth"
+    "Docs / web research"
+)
+
+CAPABILITY_PATTERNS=(
+    'playwright|puppeteer|browser|ui|visual|screenshot|e2e|end-to-end'
+    'cloudflare|workers|pages|d1|r2|kv|durable object|durable objects'
+    'github|pull request|pull-request|actions|workflow|ci|review'
+    'postgres|postgresql|mysql|sqlite|redis|mongo|mongodb|database|schema|migration'
+    'credential|credentials|api key|secret|oauth|login|auth token|access token'
+    'docs|documentation|sdk|library|framework|api reference|web search|research'
+)
+
+CAPABILITY_HINTS=(
+    "Validate that your runtime has a browser automation path available for UI setup or verification."
+    "Validate account access and any tooling needed for unattended Cloudflare operations."
+    "Validate GitHub access if the plan expects PR, workflow, or review automation."
+    "Validate local or remote database access needed for schema work, migrations, or data verification."
+    "Validate the secrets / auth material the milestone may require before execution."
+    "Validate whether you want live docs or web research available for framework / API work."
+)
+
+FOUND_ANY=0
+
+echo "${BOLD}${CYAN}Environment Checker${RESET}"
+echo "  milestone: $MILESTONE"
+if [[ -n "$PLAN" ]]; then
+    echo "  scope: single plan"
+else
+    echo "  scope: whole milestone"
+fi
+echo ""
+echo "${BOLD}Scanned files${RESET}"
+for file in "${FILES[@]}"; do
+    echo "  - $file"
+done
+
+for idx in "${!CAPABILITY_NAMES[@]}"; do
+    matches="$(rg -n -i -m 4 "${CAPABILITY_PATTERNS[$idx]}" "${FILES[@]}" || true)"
+    [[ -n "$matches" ]] || continue
+    FOUND_ANY=1
+    echo ""
+    echo "${BOLD}${MAGENTA}${CAPABILITY_NAMES[$idx]}${RESET}"
+    echo "  ${CAPABILITY_HINTS[$idx]}"
+    echo "  ${YELLOW}Manual validation${RESET}: confirm this capability is available in your chosen coding agent / runtime before execution."
+    echo "  ${GREEN}Evidence${RESET}:"
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        echo "    $line"
+    done <<< "$matches"
+done
+
+echo ""
+if [[ "$FOUND_ANY" -eq 1 ]]; then
+    echo "${BOLD}${GREEN}Checklist ready${RESET}"
+    echo "  This report is advisory only. Nothing was auto-validated."
+else
+    echo "${BOLD}${BLUE}No obvious environment-specific capabilities detected${RESET}"
+    echo "  The milestone reads as mostly self-contained from the scanned files."
+fi
