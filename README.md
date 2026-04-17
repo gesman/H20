@@ -1,6 +1,19 @@
 # H20 — lean coding-agent harness
 
-H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
+H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. 
+
+Escape from bloated, opinionated, slow, agent-specific harnesses with hairy dependencies. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
+
+## Super quick start
+
+1. Copy `./H20/` into your project root.
+2. Create a milestone:
+   `@H20/1-create-prompt.md "Build me a website"` or `@H20/1-create-prompt.md @raw-prompt.txt`
+3. Plan it:
+   `@H20/2-planner.md @H20/01-my-feature/`
+4. Execute one plan per fresh session:
+   `@H20/3-executor.md @H20/01-my-feature/PLAN-01--do-this.md`
+5. Repeat plan-by-plan. Clear context between runs. If execution writes `BLOCKED.md`, stop and either fix the issue, re-plan with `@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`, or start a new milestone with the old `raw-prompt.txt` plus `BLOCKED.md`.
 
 ## Why H20
 
