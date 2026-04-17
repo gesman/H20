@@ -1,10 +1,10 @@
 # 3-executor
 
-Paste the contents of this file into any coding agent with filesystem access (Claude Code, Codex, etc.). Then give it one plan file to execute (e.g. `./H2/01-wordcount-cli/PLAN-02--expand-test-coverage.md`). The agent will check for a done-file, load context, proactively request tools, execute the plan's steps while adding best-effort smoke tests, run verification, and — on full pass — write the done-file and commit (if in a git repo).
+Paste the contents of this file into any coding agent with filesystem access (Claude Code, Codex, etc.). Then give it one plan file to execute (e.g. `./H20/01-wordcount-cli/PLAN-02--expand-test-coverage.md`). The agent will check for a done-file, load context, proactively request tools, execute the plan's steps while adding best-effort smoke tests, run verification, and — on full pass — write the done-file and commit (if in a git repo). If a durable blocker makes the current plan unsafe to complete, it writes `BLOCKED.md` and stops.
 
 Minimal invocation for coding agents that support file references:
 
-`@H2/3-executor.md @H2/01-my-feature/PLAN-01--build-api.md`
+`@H20/3-executor.md @H20/01-my-feature/PLAN-01--build-api.md`
 
 If you were invoked by file references instead of pasted text, use this contract:
 
@@ -42,8 +42,8 @@ This is literally the first action. Not a pre-flight advisory — step 1.
 
 - Read the plan file in full.
 - Read the `good-prompt.md` in the same milestone directory.
-- If the plan's `## Prerequisite` names a done-file, read that file in full. If it names something else or names multiple files, STOP and report — H2 allows at most one prerequisite.
-- Resolve the project root as the parent of the `H2/` directory that owns the milestone. If repo-local instruction files exist there (`CLAUDE.md`, `AGENTS.md`, or similarly obvious agent-instruction files under `.claude/` or `.agents/`), read them before making changes and follow them. If they conflict with the plan, STOP and surface the conflict.
+- If the plan's `## Prerequisite` names a done-file, read that file in full. If it names something else or names multiple files, STOP and report — H20 allows at most one prerequisite.
+- Resolve the project root as the parent of the `H20/` directory that owns the milestone. If repo-local instruction files exist there (`CLAUDE.md`, `AGENTS.md`, or similarly obvious agent-instruction files under `.claude/` or `.agents/`), read them before making changes and follow them. If they conflict with the plan, STOP and surface the conflict.
 - Do not read plans other than the one you're executing. Do not read other milestones' files.
 - Before touching code, print:
   - explicit assumptions you are relying on from the plan or codebase;
@@ -88,6 +88,11 @@ While executing:
 - Make surgical changes: touch only files needed for this plan, match existing style, and clean up only imports/variables/functions made unused by your own edits.
 - Before editing an existing file, read it in full first. Creating a new file does not require a prior read.
 - If you notice unrelated dead code or design issues, mention them only if they materially affect the current plan. Do not refactor them away.
+- If a durable blocker emerges such that the current plan cannot be safely completed without user intervention, write milestone-root `BLOCKED.md` per the README schema, then stop immediately. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the plan cannot safely guess, or external constraints that change the implementation path.
+- `BLOCKED.md` must recommend 2 or 3 concrete user actions, mark exactly one as recommended, and name the exact next move for each option.
+- The earliest safe recovery point recorded in `BLOCKED.md` must never be a later plan while the current plan has no done-file. Recovery starts at the current plan unless the user chooses to abandon or supersede the milestone.
+- After writing `BLOCKED.md`, stop immediately. Do not continue into verification. Do not write a done-file. Do not commit.
+- Do not write `BLOCKED.md` for ordinary clarifying questions, dirty-worktree checks, suspected partial state, or human-only verification pauses already covered elsewhere in this prompt.
 
 **Best-effort tests — do not ask the user.** As part of this execution (not a separate plan, not a separate step), add lightweight tests for the code you produce, even when the plan's `## Verification` section does not call for them. The bar is **smoke-level confidence** that the deliverable works — not full coverage. Pick the idiomatic framework for the stack (pytest for Python, vitest/jest for Node, `go test` for Go, Playwright smoke for browser UIs, a single `curl` + assertion for HTTP endpoints, etc.).
 
@@ -124,6 +129,8 @@ Only on full verification pass. Write `PLAN-NN--DONE.md` in the same directory a
 
 The `## Gotchas for next plan` section is the contract with the next plan — under-document here and the next plan will flounder. Write it in complete sentences so a cold-context agent can absorb it without reading your code. Include test-file locations and any test-related gotchas (fixtures, import paths) the next plan should know.
 
+If execution surfaced plan-shaping discoveries but the plan still completed, record them in `## Gotchas for next plan`. Do not also leave behind `BLOCKED.md` for a completed plan.
+
 ---
 
 ## Step 7. Commit (git-only)
@@ -155,10 +162,12 @@ If this was the last plan, say so explicitly and still recommend clearing contex
 ## Anti-footgun rules
 
 - Never write a done-file for a failed or partial run. A done-file is a completion certificate; writing one falsely poisons the chain.
+- Never write both `BLOCKED.md` and `PLAN-NN--DONE.md` for the same run.
 - Never skip the recovery check because "the plan clearly hasn't been run". Always check the file system.
 - Never silently continue on suspected partial state. If deliverables already exist without a done-file, stop and ask.
 - Never push commits. Local commits only.
 - Never silently choose between materially different interpretations.
+- Never point `BLOCKED.md` recovery at `PLAN-(N+1)` or later while the current plan is incomplete.
 - Never add abstractions, configurability, or refactors the plan did not ask for.
 - Never clean up unrelated code. Touch only what this plan requires.
 - Never modify prior plans, prior done-files, or `good-prompt.md`. If one of those is wrong, stop and tell the user; they will rewind manually.
@@ -166,8 +175,9 @@ If this was the last plan, say so explicitly and still recommend clearing contex
 - Never block on a capability request. If the user does not respond or says `skip`, proceed best-effort and note the tradeoff in the done-file. The pipeline keeps moving.
 - Never ask the user whether to add tests. Just add them, best-effort. If tests are not applicable, say so in the done-file — do not debate it.
 - Never mark a human-only verification item as passed unless the user said `approved`. `skip` is a waiver, not a pass — record it honestly.
-- Never keep rolling from one H2 stage or plan into the next with a bloated context window. Recommend a context reset at each handoff.
+- Never use `BLOCKED.md` as a substitute for the normal user pauses already defined in this prompt.
+- Never keep rolling from one H20 stage or plan into the next with a bloated context window. Recommend a context reset at each handoff.
 
 ---
 
-3-executor.md — end. Contract: ./H2/README.md § Schemas, § Recovery rule
+3-executor.md — end. Contract: ./H20/README.md § Schemas, § Recovery rule

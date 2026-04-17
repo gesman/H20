@@ -2,15 +2,15 @@
 
 ## Project Structure & Module Organization
 
-This repository is documentation-first. The product payload lives in [`H2/`](/home/gesman/PROJECTS/H2/H2): `1-create-prompt.md`, `2-planner.md`, and `3-executor.md`. The root [`README.md`](/home/gesman/PROJECTS/H2/README.md) is the authoritative contract for directory layout, schemas, and recovery rules. [`CLAUDE.md`](/home/gesman/PROJECTS/H2/CLAUDE.md) contains repo-specific agent notes. `0_readme.txt` is a quick-start reference, not the source of truth.
+This repository is documentation-first. The product payload lives in [`H20/`](/home/gesman/PROJECTS/H2/H20): `1-create-prompt.md`, `2-planner.md`, and `3-executor.md`. The root [`README.md`](/home/gesman/PROJECTS/H2/README.md) is the authoritative contract for directory layout, schemas, and recovery rules. [`CLAUDE.md`](/home/gesman/PROJECTS/H2/CLAUDE.md) contains repo-specific agent notes. `0_readme.txt` is a quick-start reference, not the source of truth.
 
 ## Build, Test, and Development Commands
 
 There is no build system, runtime, or package manager in this repo. Useful maintenance commands:
 
-- `cp -R H2 /tmp/demo-project/H2` copies the payload into a throwaway project for manual validation.
-- `rg -n "## Schemas|Contract:" README.md H2/*.md` checks that prompt files still point at the README schema contract.
-- `git diff -- README.md H2/*.md AGENTS.md` reviews the contributor-facing surface before commit.
+- `cp -R H20 /tmp/demo-project/H20` copies the payload into a throwaway project for manual validation.
+- `rg -n "## Schemas|Contract:" README.md H20/*.md` checks that prompt files still point at the README schema contract.
+- `git diff -- README.md H20/*.md AGENTS.md` reviews the contributor-facing surface before commit.
 
 ## Coding Style & Naming Conventions
 
@@ -21,7 +21,7 @@ Edit in plain Markdown only. Match the existing style: ATX headings, short imper
 There is no automated test suite yet. Validation is manual and contract-based:
 
 - Re-read `README.md` `## Schemas` after changing any prompt file.
-- Keep `README.md` and all three files in `H2/` mutually consistent in the same change.
+- Keep `README.md` and all three files in `H20/` mutually consistent in the same change.
 - When changing executor behavior, confirm the done-file recovery rule and single-prerequisite rule still read clearly and consistently.
 
 ## Commit & Pull Request Guidelines
