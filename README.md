@@ -14,6 +14,7 @@ Escape from bloated, opinionated, slow, agent-specific harnesses with hairy depe
 4. Execute one plan per fresh session:
    `@H20/3-executor.md @H20/01-my-feature/PLAN-01--do-this.md`
 5. Repeat plan-by-plan. Clear context between runs. If execution writes `BLOCKED.md`, stop and either fix the issue, re-plan with `@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`, or start a new milestone with the old `raw-prompt.txt` plus `BLOCKED.md`.
+6. Optional: if you use Claude Code and want a thin loop wrapper around repeated executor runs, use `./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --steps 2`. This is a non-core convenience script, not part of the H20 contract. It repeatedly invokes the next pending plan(s), passes `AUTOEXEC_MODE=1`, and stops on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
 
 ## Why H20
 
@@ -87,6 +88,10 @@ Inside a target project using H20:
 ├── 2-planner.md               (meta-prompt)
 ├── 3-executor.md              (meta-prompt)
 ├── Extras/                    (optional convenience scripts; non-contractual)
+│   ├── 2a-env-checker
+│   ├── 3-autoexec-claude
+│   ├── README.md
+│   └── helpers/               (support files used by optional extras)
 ├── README.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
@@ -99,7 +104,6 @@ Inside a target project using H20:
 │   └── PLAN-02--DONE.md
 ├── 02-<second-milestone>/
 │   └── …
-└── example/                       (reference walkthrough)
 ```
 
 Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and their done-files live **inline** in the milestone dir — there is NO `plans/` or `summaries/` subdir.
@@ -137,11 +141,11 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 ### PLAN-NN--<kebab>.md schema
 
 - `# Plan NN: <title>`
-- `## Prerequisite` — either `none` or a single line naming the immediately prior done-file, e.g. `./H20/01-wordcount/PLAN-01--DONE.md`. H20 enforces **at most one prerequisite per plan**. If a plan seems to need two upstream done-files, the planner should merge plans or fold context into the nearest done-file's gotchas.
+- `## Prerequisite` — either `none` or a single line naming the immediately prior done-file, e.g. `./H20/01-my-feature/PLAN-01--DONE.md`. H20 enforces **at most one prerequisite per plan**. If a plan seems to need two upstream done-files, the planner should merge plans or fold context into the nearest done-file's gotchas.
 - `## Goal` — one paragraph; what this plan achieves end-to-end.
 - `## Steps` — numbered list; each step small, specific, verifiable.
 - `## Deliverables` — files created or modified, with relative paths.
-- `## Verification` — concrete commands/checks the executor must run (e.g. `pytest tests/test_wordcount.py`, or "open http://localhost:3000 and confirm the dashboard loads"). If a verification item needs human judgment, the executor must do the setup first (start server, seed data, print URL/steps), then stop for `approved` or `skip`.
+- `## Verification` — concrete commands/checks the executor must run (e.g. `pytest tests/test_feature.py`, or "open http://localhost:3000 and confirm the dashboard loads"). If a verification item needs human judgment, the executor must do the setup first (start server, seed data, print URL/steps), then stop for `approved` or `skip`.
 - `## Done signal` — literal: "On full verification pass, write `PLAN-NN--DONE.md` in this directory per the README done-file schema, then commit if in a git repo."
 
 ### PLAN-NN--DONE.md schema
@@ -213,6 +217,57 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
    `@H20/3-executor.md @H20/01-my-feature/PLAN-01--build-api.md`
    Recommended after each successful plan: clear or reset context before executing the next plan. In most coding agents: `/clear`.
 
-## Example
+## Optional helpers
 
-`./H20/example/01-wordcount-cli/` is a complete walkthrough of the H20 flow applied to a trivial word-count CLI. Read it top-to-bottom alongside the schemas in this document to see how every contract is exercised. This example illustrates the **research-skip** branch of 1-create-prompt (the raw prompt is opinionated enough that Phase 1 judgment declines research); the research-run branch appears naturally whenever a less-specified prompt is used. It also demonstrates the executor's **capability-request** and **best-effort tests** behaviors — see `PLAN-01--DONE.md`'s `## Summary` and the executor-added `test_wordcount_smoke.py` in `## Files changed`.
+`./H20/Extras/` contains convenience scripts only. They are outside the core H20 contract, may be agent-specific, and can be ignored completely if you prefer the pure copy-paste flow.
+
+### 2a-env-checker
+
+Purpose: scan a milestone or one specific plan file and print a manual checklist of likely environment capabilities worth validating before execution. It does **not** inspect your actual agent runtime, installed MCPs, or plugins; it only infers likely needs from the milestone files already on disk.
+
+Syntax:
+
+```bash
+./H20/Extras/2a-env-checker
+./H20/Extras/2a-env-checker ./H20/01-my-feature
+./H20/Extras/2a-env-checker ./01-my-feature
+./H20/Extras/2a-env-checker ./H20/01-my-feature/PLAN-02--ui.md
+```
+
+Behavior:
+
+- With no args, it prints its own syntax / help.
+- With a milestone dir, it scans unfinished plans in that milestone.
+- With a plan file, it scans only that specific plan.
+- Output is a color-coded checklist plus evidence lines pulled from the prompt / roadmap / plan files so you can validate the environment manually before you run the executor.
+
+### 3-autoexec-claude
+
+Purpose: Claude Code wrapper that executes the next pending H20 plan(s) for one milestone in a loop using the current user's Claude subscription login. This helper is Claude-specific by design.
+
+Syntax:
+
+```bash
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature [--steps N] [--model sonnet|opus|<full-model>] [--skiphuman] [--no-stream]
+```
+
+Accepted milestone path styles include both `./H20/01-my-feature` and `./01-my-feature`.
+
+Examples:
+
+```bash
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --steps 2
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --model opus
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --skiphuman
+```
+
+Behavior:
+
+- Streaming output is on by default; `--no-stream` disables it.
+- The wrapper defaults Claude Code permissions to `--dangerously-skip-permissions`.
+- It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
+- `BLOCKED.md` stops the loop immediately.
+- If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.
+- Without `--skiphuman`, the loop stops when a human-only verification checkpoint is reached.
+- With `--skiphuman`, those human-only checks are forced to `⚠ skipped`, matching the executor overlay semantics documented above.
