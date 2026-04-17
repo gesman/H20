@@ -34,11 +34,13 @@ ${BOLD}Purpose${RESET}
 ${BOLD}Syntax${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}<model-id>${RESET}] [${YELLOW}--skiphuman${RESET}]
   milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
+  if ${YELLOW}--model${RESET} is omitted, the wrapper defers to your local Codex CLI default
+  the current tested explicit model is ${MAGENTA}gpt-5.4${RESET}
 
 ${BOLD}Examples${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--steps${RESET} ${MAGENTA}2${RESET}
-  ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}gpt-5.3-codex${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}gpt-5.4${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--skiphuman${RESET}
 
 ${BOLD}Behavior${RESET}
@@ -67,6 +69,15 @@ warn() {
 fail() {
     printf "%s%s%s\n" "$RED" "$1" "$RESET" >&2
     exit 1
+}
+
+normalize_model() {
+    case "$MODEL" in
+        gpt-5-codex)
+            warn "${BOLD}Model alias gpt-5-codex is no longer accepted by ChatGPT-backed Codex CLI${RESET}${YELLOW} — using gpt-5.4 instead${RESET}"
+            MODEL="gpt-5.4"
+            ;;
+    esac
 }
 
 require_command() {
@@ -136,7 +147,7 @@ build_prompt() {
 run_codex_for_plan() {
     local prompt="$1"
     local -a cmd
-    cmd=(codex -a never exec --sandbox danger-full-access --ephemeral --cd "$PROJECT_ROOT")
+    cmd=(codex -a never exec --sandbox danger-full-access --ephemeral --skip-git-repo-check --cd "$PROJECT_ROOT")
     if [[ -n "$MODEL" ]]; then
         cmd+=(--model "$MODEL")
     fi
@@ -192,6 +203,8 @@ done
 require_command codex
 require_command python3
 
+normalize_model
+
 MILESTONE="$(resolve_milestone_path "$MILESTONE")" || fail "Milestone directory not found: $MILESTONE"
 [[ -f "$EXECUTOR_PROMPT" ]] || fail "Executor prompt not found: $EXECUTOR_PROMPT"
 
@@ -211,7 +224,7 @@ echo "  milestone: $MILESTONE"
 if [[ -n "$MODEL" ]]; then
     echo "  model: $MODEL"
 else
-    echo "  model: default (Codex CLI config)"
+    echo "  model: Codex CLI default"
 fi
 if [[ "$STEP_LIMIT" -eq 0 ]]; then
     echo "  steps: all pending plans"

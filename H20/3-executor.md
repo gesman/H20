@@ -145,6 +145,7 @@ If execution surfaced plan-shaping discoveries but the plan still completed, rec
 Detect git by checking for `.git/` at or above the current directory. If present:
 
 - Use the done-file's `## Files changed` as a checklist, but treat the actual diff as source of truth. If you changed an extra file for this plan, add it to `## Files changed` before committing. If unrelated dirty files are present, STOP and ask instead of staging around them.
+- Before staging, set the done-file's `## Commit` section to `same commit as this done-file — subject: plan-NN: <title>`.
 - Stage the files changed by this plan plus the done-file itself.
 - Commit with message `plan-NN: <plan title>` — the title from the plan file's `# Plan NN: <title>` heading.
 - Do **not** push.
@@ -158,7 +159,7 @@ If not a git repo: record "not a git repo — no commit" in the done-file's `## 
 End with a compact handoff:
 
 - done-file path;
-- commit summary or `not a git repo`;
+- actual commit SHA + subject from git, or `not a git repo`;
 - if you can identify the next plan in the same milestone, print its exact executor invocation;
 - recommendation to clear or reset context before executing the next plan (for most coding agents: `/clear`).
 

@@ -31,6 +31,7 @@ Notes:
 - accepted path styles include `./H20/01-my-feature` and `./01-my-feature`
 - optional flags:
   - `--steps N`: stop after N plans
-  - `--model <model-id>`: override the Codex CLI model for this run
+  - `--model <model-id>`: override the Codex CLI default model for this run; the current tested explicit model is `gpt-5.4`
   - `--skiphuman`: pass `AUTOEXEC_SKIP_HUMAN=1` so human-only checks are recorded as skipped
-- Codex runs use `-a never`, `--sandbox danger-full-access`, and `--ephemeral`
+- Codex runs use `-a never`, `--sandbox danger-full-access`, `--ephemeral`, and `--skip-git-repo-check`
+- If `--model gpt-5-codex` is passed, the wrapper rewrites it to `gpt-5.4` before launching Codex because ChatGPT-backed Codex CLI rejects the older alias.

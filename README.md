@@ -2,6 +2,8 @@
 
 H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. 
 
+For copied payloads, the same contract also ships as `./H20/README.md` so a project that receives only the `H20/` directory remains self-contained. In this source repo, the root `README.md` remains the authoritative edit target for the contract; keep the payload copy in sync.
+
 Escape from bloated, opinionated, slow, agent-specific harnesses with hairy dependencies. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
 
 ## Super quick start
@@ -18,7 +20,7 @@ Escape from bloated, opinionated, slow, agent-specific harnesses with hairy depe
 
    `./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --model opus --skiphuman [--steps 2]`
    
-   `./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.3-codex --skiphuman [--steps 2]`
+   `./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.4 --skiphuman [--steps 2]`
 
    These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending plan(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
 
@@ -162,7 +164,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - `## Files changed` — bullet list of paths (including any executor-added test files).
 - `## Verification results` — one line per verification check: `✅`, `❌`, or `⚠ skipped`, plus the command/check (includes executor-added tests even when the plan did not list them).
 - `## Gotchas for next plan` — anything the next plan needs to know: APIs added, signatures differing from plan assumptions, env vars required, known limitations, test-file locations and fixtures. Write full sentences so a fresh-context agent can absorb it without reading upstream code. Empty is OK but usually means you under-documented.
-- `## Commit` — if in a git repo, the commit SHA and subject; otherwise "not a git repo — no commit".
+- `## Commit` — if in a git repo, record `same commit as this done-file — subject: plan-NN: <title>`; otherwise `not a git repo — no commit`. The executor's final handoff should print the actual SHA separately because a tracked file cannot contain its own final commit ID without changing that ID.
 
 ### BLOCKED.md schema
 
@@ -290,13 +292,14 @@ Syntax:
 ```
 
 Accepted milestone path styles include both `./H20/01-my-feature` and `./01-my-feature`.
+If `--model` is omitted, `3-autoexec-codex` defers to your local Codex CLI default model. The current tested explicit model is `gpt-5.4`.
 
 Examples:
 
 ```bash
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --steps 2
-./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.3-codex
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.4
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --skiphuman
 ```
 
@@ -308,6 +311,8 @@ Behavior:
 - The wrapper disables approval prompts with `-a never`.
 - The wrapper defaults sandboxing to `--sandbox danger-full-access`.
 - The wrapper defaults session persistence to `--ephemeral`.
+- The wrapper passes `--skip-git-repo-check` so runs still start when the target repo is outside Codex's trusted-directory list.
+- If `--model gpt-5-codex` is passed, the wrapper rewrites it to `gpt-5.4` before launching Codex because ChatGPT-backed Codex CLI rejects the older alias.
 - It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
 - `BLOCKED.md` stops the loop immediately.
 - If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.
