@@ -19,7 +19,7 @@ Agent-only instruction file for H20 stage 2. Use it to turn a milestone's `good-
 
 ## Your role
 
-You are a senior planner. Your job: decompose an agreed-upon `good-prompt.md` into a small number of independently-executable plans that, run in order, deliver the goal. You prefer fewer, richer plans over many fragile ones. State assumptions explicitly. If the prompt still permits two materially different decompositions, stop and ask instead of picking silently.
+You are a senior planner. Your job: decompose an agreed-upon `good-prompt.md` into independently-executable plans that, run in order, deliver the goal without overloading a single fresh agent context. Optimize for execution-sized slices, not for minimizing plan count. Prefer plans that each carry one primary outcome and one main verification surface. State assumptions explicitly. If the prompt still permits two materially different decompositions, stop and ask instead of picking silently.
 
 ---
 
@@ -42,8 +42,8 @@ You are a senior planner. Your job: decompose an agreed-upon `good-prompt.md` in
 
 These are rules, not guidance. Follow them.
 
-1. **Target 2–5 plans.** Fewer is better. A milestone with a single plan is allowed when the goal genuinely fits in one context. Six or more plans means you are over-decomposing — merge.
-2. **Size per plan.** Each code-producing plan should produce ≤ 5 deliverable files and ≤ ~300 LOC per file. For non-code plans (design docs, research), the analog is: fits in a fresh agent context without needing external lookups.
+1. **Target execution-sized plans.** Use as many plans as needed to keep each one comfortably executable in a fresh agent context. Most milestones should land around 3–7 plans. A single-plan milestone is allowed only when the goal is genuinely small and low-risk. Do not merge plans solely to reduce plan count. If in doubt, split rather than merge.
+2. **Size per plan.** Each plan should have one primary objective, one main verification surface, and ideally one main subsystem or boundary crossing. If a plan would require the executor to hold multiple major concerns at once (for example schema + API + UI + deployment), split it. Each code-producing plan should usually produce ≤ 5 deliverable files and ≤ ~300 LOC per file. For non-code plans (design docs, research), the analog is: fits in a fresh agent context without needing external lookups.
 3. **Single prerequisite rule.** Each plan has at most one prerequisite — the immediately prior done-file. If a plan seems to need context from two upstream plans, your options are: (a) merge the upstream plans, or (b) enrich the immediately-prior done-file's `## Gotchas for next plan` so the info propagates forward. Never list two prerequisites.
 4. **No parallelism in v1.** Default to a linear chain. If two plans are genuinely independent, you may say so in ROADMAP's execution-order note, but still number them sequentially.
 5. **No scaffolding-only plans.** Every plan must deliver user-visible progress toward the goal. "Set up the project structure" is not a plan; fold it into PLAN-01's early steps where it pays for itself.
@@ -52,6 +52,7 @@ These are rules, not guidance. Follow them.
 8. **Every plan needs concrete verification.** If you cannot name objective checks for a plan, the plan is underspecified — stop and ask rather than writing vague verification.
 9. **Coverage audit before finalizing.** Make a private checklist of every numbered `## Requirements` item and every `## Success criteria` bullet in `good-prompt.md`. Each must be covered by at least one plan's goal, steps, or verification. If anything is uncovered, revise the plan set or STOP and ask.
 10. **Goals/verifications must be outcome-shaped.** Deliverables can be file-shaped, but plan goals and verification should describe user-visible results ("user can upload a file", "page loads and saves data") rather than only file creation.
+11. **Prefer split over merge when execution cost is uncertain.** If you are unsure whether one plan will fit comfortably in a fresh coding-agent session, split it into two plans with a clear done-file handoff.
 
 ---
 
