@@ -84,23 +84,43 @@ On `(b)` or silence, jump to Phase 4. On `(a)`, proceed to Phase 3.
 For each decision axis, research it. If your runtime has web-search tools, use them for current framework versions, recent benchmarks, and ecosystem health signals. If not, reason from training knowledge and **say so explicitly** in your output, e.g. "Reasoning from training knowledge — recommend cross-checking latest versions before committing."
 If you make a claim like `must`, `only`, or `not possible`, verify it against official documentation when search is available. If you cannot verify it, present it as an assumption or likely constraint — not as a settled fact.
 
-Present findings as a fenced markdown table **per axis** with columns: `Option | Pros | Cons | Best when`. Keep cells short — one phrase per cell. After each table, include a one-sentence recommendation if one option clearly fits the raw input corpus' constraints; otherwise say "no clear default — your call".
+Present findings as compact numbered **choice cards per axis**, not tables. For each option, include exactly these fields in this order:
+
+- option name
+- `Best for:` one short phrase
+- `Upside:` one short phrase
+- `Tradeoff:` one short phrase
+
+After the options for that axis, include:
+
+- `Recommendation:` one sentence if one option clearly fits the raw input corpus' constraints; otherwise say `no clear default — your call`
+- `Reply format:` one short line showing how the user can answer (`"Web framework: 1"`, `"FastAPI"`, or `"you pick"`)
 
 Example:
 
 ```
 #### Web framework
 
-| Option   | Pros                              | Cons                          | Best when                |
-|----------|-----------------------------------|-------------------------------|--------------------------|
-| FastAPI  | async-first, OpenAPI built-in     | newer ecosystem, Python 3.8+  | modern API + typed code  |
-| Flask    | mature, minimal, huge ecosystem   | sync by default, less batteries | small apps, learning    |
-| Django REST | batteries-included, admin UI  | heavier, opinionated          | CRUD-heavy, admin-facing |
+1. FastAPI
+   Best for: modern API + typed code
+   Upside: async-first, OpenAPI built in
+   Tradeoff: newer ecosystem, Python 3.8+
+
+2. Flask
+   Best for: small apps, learning
+   Upside: mature, minimal, huge ecosystem
+   Tradeoff: sync by default, less batteries included
+
+3. Django REST
+   Best for: CRUD-heavy, admin-facing apps
+   Upside: batteries included, admin UI
+   Tradeoff: heavier, more opinionated
 
 Recommendation: FastAPI — your mention of "typed" and "async" aligns cleanly.
+Reply format: "Web framework: 1", "FastAPI", or "you pick".
 ```
 
-List all axes and their tables at once, not one-by-one. End with:
+List all axes and their choice cards at once, not one-by-one. End with:
 
 ```
 -- which option per axis? (reply in any format) --
@@ -120,7 +140,7 @@ Print:
 ### I need to grill you before I write the plan. Please answer these:
 ```
 
-Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". Offer 2–4 multiple-choice options where knowable, with one phrase of trade-off per option. Users can always answer freeform.
+Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase. After the batch, include one explicit reply-format line (for example: `"1B, 2A, 3 freeform"`). Users can always answer freeform.
 
 Then emit:
 
@@ -143,7 +163,7 @@ Stop. Do not invent answers. After receiving replies, if still ambiguous, run on
      - its path or label;
      - its contents verbatim inside a clearly separated block.
    - `---` separator.
-   - Full transcript beneath: Phase 1 judgment, Phase 2 offer + user's choice (if shown), Phase 3 tables + decisions (if run), Phase 4 grilling Q&A. Future humans read this to see exactly how the vague idea became concrete from the full source corpus.
+   - Full transcript beneath: Phase 1 judgment, Phase 2 offer + user's choice (if shown), Phase 3 choice cards + decisions (if run), Phase 4 grilling Q&A. Future humans read this to see exactly how the vague idea became concrete from the full source corpus.
 5. **Write** `./H20/NN-<kebab>/good-prompt.md` conforming to the README `good-prompt.md schema`. Land framework/tech decisions in `## Context`. Populate `## Research notes` **only if Phase 3 ran**. Populate `## Open questions` **only if grilling left gaps you could not close**.
 6. End with a compact handoff:
    - milestone directory path;

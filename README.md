@@ -59,12 +59,13 @@ raw prompt (verbal or ./H20/NN-<kebab>/raw-prompt.txt)
     │
     │   Phase 3 — Research (conditional on opt-in)
     │     LLM researches (web search if available, else training
-    │     knowledge). Presents a pros/cons table per decision axis.
+    │     knowledge). Presents numbered choice cards per decision
+    │     axis, with recommendation + reply format.
     │     User picks options. Decisions captured for good-prompt.
     │
     │   Phase 4 — Grilling
-    │     LLM asks 3–7 clarifying questions (multi-choice where
-    │     possible), waits for answers. Up to 3 rounds.
+    │     LLM asks 3–7 clarifying questions in a compact numbered
+    │     batch, waits for answers. Up to 3 rounds.
     │
     │   Phase 5 — Writing
     │     LLM picks next NN, creates ./H20/NN-<kebab>/, writes:
