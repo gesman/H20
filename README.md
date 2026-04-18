@@ -210,7 +210,7 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
 
 1. Copy `./H20/` into your project root. Files are already ordered by name (`1-…`, `2-…`, `3-…`) so `ls ./H20/` shows the pipeline left to right.
 2. Gather raw source material. This can be one file, many files, a directory, pasted text, or any combination.
-3. Paste `1-create-prompt.md` content into a coding agent, then your raw input corpus. The agent may recommend a tech/framework research phase — accept or skip based on how opinionated your source material already is. Then answer its grilling questions. You get `good-prompt.md`.
+3. Paste `1-create-prompt.md` content into a coding agent, then your raw input corpus. The agent may recommend a tech/framework research phase — accept or skip based on how opinionated your source material already is. Then answer its grilling questions, which should include clearly marked recommended options when a default is justified by the corpus. You get `good-prompt.md`.
    Shortcuts for coding agents that support file references:
    `@H20/1-create-prompt.md @raw_prompt.txt`
    `@H20/1-create-prompt.md @raw-prompt1.txt @raw-prompt2.txt`

@@ -134,7 +134,7 @@ Print:
 ### I need to grill you before I write the plan. Please answer these:
 ```
 
-Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase. After the batch, include one explicit reply-format line (for example: `"1B, 2A, 3 freeform"`). Users can always answer freeform.
+Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, include one explicit reply-format line (for example: `"1B, 2A, 3 freeform"`). Users can always answer freeform.
 
 Then emit:
 
