@@ -93,7 +93,7 @@ While executing:
 - Make surgical changes: touch only files needed for this plan, match existing style, and clean up only imports/variables/functions made unused by your own edits.
 - Before editing an existing file, read it in full first. Creating a new file does not require a prior read.
 - If you notice unrelated dead code or design issues, mention them only if they materially affect the current plan. Do not refactor them away.
-- If a durable blocker emerges such that the current plan cannot be safely completed without user intervention, write milestone-root `BLOCKED.md` per the README schema, then stop immediately. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the plan cannot safely guess, or external constraints that change the implementation path.
+- If a durable blocker emerges such that the current plan cannot be safely completed without user intervention, write milestone-root `BLOCKED.md` per `./H20/CONTRACT.md`, then stop immediately. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the plan cannot safely guess, or external constraints that change the implementation path.
 - `BLOCKED.md` must recommend 2 or 3 concrete user actions, mark exactly one as recommended, and name the exact next move for each option.
 - The earliest safe recovery point recorded in `BLOCKED.md` must never be a later plan while the current plan has no done-file. Recovery starts at the current plan unless the user chooses to abandon or supersede the milestone.
 - After writing `BLOCKED.md`, stop immediately. Do not continue into verification. Do not write a done-file. Do not commit.
@@ -188,4 +188,4 @@ If this was the last plan, say so explicitly and still recommend clearing contex
 
 ---
 
-3-executor.md — end. Contract: ./H20/README.md § Schemas, § Recovery rule
+3-executor.md — end. Contract: ./H20/CONTRACT.md § Schemas, § Recovery rule

@@ -1,4 +1,4 @@
-# H20 Contract README
+# H20 Contract
 
 This file ships inside copied `./H20/` directories so the payload stays self-contained after users copy only that directory into a project. In the source H20 repository, the root `README.md` remains the authoritative edit target for this contract; keep this payload copy in sync when changing schemas, recovery semantics, or helper behavior.
 
@@ -17,7 +17,7 @@ Inside a target project using H20:
 │   ├── 3-autoexec-codex
 │   ├── README.md
 │   └── helpers/
-├── README.md
+├── CONTRACT.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
 │   ├── good-prompt.md

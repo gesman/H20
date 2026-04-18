@@ -2,7 +2,7 @@
 
 H20 is three markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through three pasteable meta-prompts, with fresh context per step so nothing rots. It is **not** an installer, **not** a framework, and **not** tied to one coding agent vendor. 
 
-For copied payloads, the same contract also ships as `./H20/README.md` so a project that receives only the `H20/` directory remains self-contained. In this source repo, the root `README.md` remains the authoritative edit target for the contract; keep the payload copy in sync.
+For copied payloads, the same contract also ships as `./H20/CONTRACT.md` so a project that receives only the `H20/` directory remains self-contained. In this source repo, the root `README.md` remains the authoritative edit target for the contract; keep the payload copy in sync.
 
 Escape from bloated, opinionated, slow, agent-specific harnesses with hairy dependencies. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
 
@@ -69,7 +69,7 @@ raw prompt (verbal or ./H20/NN-<kebab>/raw-prompt.txt)
     │   Phase 5 — Writing
     │     LLM picks next NN, creates ./H20/NN-<kebab>/, writes:
     │       - raw-prompt.txt (input + research+Q&A transcript)
-    │       - good-prompt.md (structured, per README schema)
+    │       - good-prompt.md (structured, per contract schema)
     │
     ▼   paste 2-planner.md + point at ./H20/NN-<kebab>/
     │   coding agent writes:
@@ -101,7 +101,7 @@ Inside a target project using H20:
 │   ├── 3-autoexec-codex
 │   ├── README.md
 │   └── helpers/               (support files used by optional extras)
-├── README.md
+├── CONTRACT.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
 │   ├── good-prompt.md

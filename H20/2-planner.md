@@ -143,4 +143,4 @@ On full verification pass, write `PLAN-02--DONE.md` in this directory per the RE
 
 ---
 
-2-planner.md — end. Contract: ./H20/README.md § Schemas
+2-planner.md — end. Contract: ./H20/CONTRACT.md § Schemas
