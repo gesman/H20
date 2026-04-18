@@ -1,23 +1,11 @@
 # 2-planner
 
-Paste the contents of this file into a coding agent with filesystem access. Then give it either a milestone directory (e.g. `./H20/01-wordcount/`) or a direct path to `good-prompt.md` (e.g. `./H20/01-wordcount/good-prompt.md`). If you are re-planning after a blocked execution, also give it that milestone's `BLOCKED.md`. It will read `good-prompt.md`, optionally read `BLOCKED.md`, ask you one clarifying round if there are hard ambiguities, then write `ROADMAP.md` and `PLAN-01--<kebab>.md`, `PLAN-02--<kebab>.md`, … back into the same milestone directory.
+Agent-only instruction file for H20 stage 2. Use it to turn a milestone's `good-prompt.md` into `ROADMAP.md` plus `PLAN-NN--<kebab>.md` files.
 
-Minimal invocation for coding agents that support file references:
-
-`@H20/2-planner.md @H20/01-my-feature/`
-
-Also supported:
-
-`@H20/2-planner.md @H20/01-my-feature/good-prompt.md`
-
-When re-planning after a blocked execution:
-
-`@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`
-
-If you were invoked by file references instead of pasted text, use this contract:
+## Invocation contract
 
 - Treat this file as the instruction set.
-- Treat everything after this file as planner input.
+- Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as planner input.
 - If exactly one milestone directory is present, use it and read `<milestone>/good-prompt.md`.
 - If exactly one `good-prompt.md` file is present, infer the milestone directory as that file's parent and use it.
 - If exactly one `BLOCKED.md` file is present, it must belong to the same milestone directory you resolved from the planner input. Read it in addition to `good-prompt.md`.
@@ -25,6 +13,7 @@ If you were invoked by file references instead of pasted text, use this contract
 - If multiple candidate milestone directories or multiple candidate `good-prompt.md` files are present, STOP and ask the user which milestone is the source of truth.
 - If multiple `BLOCKED.md` files are present, or the `BLOCKED.md` points at a different milestone than the resolved one, STOP and ask the user which blocker file should be used.
 - If no planner input is present, STOP and ask for a milestone directory or `good-prompt.md` path.
+- The planner input is stage-2 source material only. Do not execute implementation work or answer with an architecture memo instead of writing roadmap / plan artifacts.
 
 ---
 

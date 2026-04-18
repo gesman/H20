@@ -25,6 +25,7 @@ Notes:
   - `@H20/Extras/1-create-prompt-assume-defaults.md "Make background of all pages under /Settings be #123456"`
 - also works with referenced source files:
   - `@H20/Extras/1-create-prompt-assume-defaults.md @raw-prompt.txt`
+- do not use a bare path like `H20/Extras/1-create-prompt-assume-defaults.md` and expect the agent to load it; use `@...` or paste the file contents
 - accepted use case: small local changes where conservative defaults are safe
 - refusal cases: broad features, architecture choices, integrations, migrations, or anything that would need real clarification
 - output: normal milestone artifacts under `./H20/NN-<kebab>/`, including `raw-prompt.txt` and schema-conforming `good-prompt.md`

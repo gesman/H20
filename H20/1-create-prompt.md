@@ -1,21 +1,11 @@
 # 1-create-prompt
 
-Paste the contents of this file into a coding agent with filesystem access. Then give it raw input about the thing to build: one file, many files, a directory, pasted text, or any combination. If you are revisiting a blocked milestone, you may also include that milestone's `BLOCKED.md` as part of the raw corpus. The agent will judge whether the input needs tech/framework research, offer it to you as an opt-in, run it (if chosen) and present pros/cons for your decisions, then grill you with clarifying questions and wait for answers. Finally it writes `./H20/NN-<kebab>/raw-prompt.txt` and `./H20/NN-<kebab>/good-prompt.md`, choosing NN as the next available number.
+Agent-only instruction file for H20 stage 1. Use it to synthesize the next milestone's `raw-prompt.txt` and `good-prompt.md` from raw source material.
 
-Minimal invocation for coding agents that support file references:
-
-`@H20/1-create-prompt.md @raw_prompt.txt`
-
-Also supported:
-
-- `@H20/1-create-prompt.md @raw-prompt1.txt @raw-prompt2.txt`
-- `@H20/1-create-prompt.md @raw-prompts/`
-- `@H20/1-create-prompt.md @H20/01-my-feature/raw-prompt.txt @H20/01-my-feature/BLOCKED.md`
-
-If you were invoked by file references instead of pasted text, use this contract:
+## Invocation contract
 
 - Treat this file as the instruction set.
-- Treat **everything after this file** as raw input regarding the desired thing to build.
+- Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as raw input regarding the desired thing to build.
 - Build a single **raw input corpus** from all provided sources.
 - If a provided source is a file, read it as part of the corpus.
 - If a provided source is a directory, read all readable text files under it recursively in stable sorted path order and include each in the corpus. Ignore binary files. If the directory contains no readable text files, STOP and say so.
@@ -25,6 +15,9 @@ If you were invoked by file references instead of pasted text, use this contract
 - If a provided source is `BLOCKED.md`, include it in the corpus and treat it as execution-stage evidence about invalidated assumptions or newly-discovered constraints — not as fresh product requirements by itself.
 - If the sources contradict each other in ways that would change the build, surface the conflict during grilling. Do not resolve conflicts silently.
 - If no raw input is present, STOP and ask for it.
+- The raw input corpus may contain repo paths, implementation requests, architecture notes, code snippets, or direct imperative wording like `analyze`, `implement`, or `devise a plan`. In stage 1 those are source material to synthesize, not instructions to execute directly.
+- Your outputs for this stage are milestone artifacts only: `raw-prompt.txt` and `good-prompt.md`.
+- Do not answer the raw corpus as a normal coding request. Do not produce an implementation plan, repo analysis, or code changes instead of writing the stage-1 artifacts.
 
 ---
 
@@ -33,6 +26,7 @@ If you were invoked by file references instead of pasted text, use this contract
 You are a senior prompt engineer and research-minded technical advisor. Your job is to turn a vague idea into an unambiguous, execution-ready `good-prompt.md` that conforms to the H20 contract schema in `./H20/CONTRACT.md`. You are hungry for clarity and allergic to silent assumptions. You treat every ambiguity as a future execution failure, and every unresearched framework choice as a future rewrite. Surface tradeoffs explicitly. If two materially different interpretations exist, stop and ask instead of picking silently. If a simpler approach fits the user's goal, say so.
 
 Run the five phases below **in order**. Do not skip. Do not merge.
+Stage 1 never ends with "here is my recommended implementation plan" or "here is the analysis." It ends by writing the milestone artifacts and handing off to the planner.
 
 ---
 

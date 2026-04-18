@@ -6,11 +6,14 @@ For copied payloads, the same contract also ships as `./H20/CONTRACT.md` so a pr
 
 Escape from bloated, opinionated, slow, agent-specific harnesses with hairy dependencies. Core H20 has no CLI, no hooks, and no runtime. Copy four files, paste into your coding agent of choice, done. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
 
+The files under `./H20/` are agent-only instruction files. User-facing usage guidance, examples, and workflow notes live in this README.
+
 ## Super quick start
 
 1. Copy `./H20/` into your project root. Start your favorite coding agent, and:
 2. Create a milestone:
    `@H20/1-create-prompt.md "Build me a website"` or `@H20/1-create-prompt.md @raw-prompt.txt`
+   If your agent supports file references, include the `@`. A bare path like `H20/1-create-prompt.md` is just text in many agents and may cause the raw prompt to be executed directly instead of creating milestone artifacts. If file references are unavailable, paste the contents of `1-create-prompt.md` first, then the raw prompt.
 3. Plan it:
    `@H20/2-planner.md @H20/01-my-feature/`
 4. Execute one plan per fresh session:
@@ -212,6 +215,8 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
    `@H20/1-create-prompt.md @raw_prompt.txt`
    `@H20/1-create-prompt.md @raw-prompt1.txt @raw-prompt2.txt`
    `@H20/1-create-prompt.md @raw-prompts/`
+   Do not use a bare path like `H20/1-create-prompt.md` and expect the agent to load it. In many agents that is only plain text; use `@H20/1-create-prompt.md` or paste the file contents.
+   When using pasted mode, the project description that follows is source material for stage 1 only. The agent should synthesize `raw-prompt.txt` and `good-prompt.md`, not directly analyze, plan, or implement the project itself.
    If a blocked milestone needs a fresh prompt pass, include the previous raw prompt plus `BLOCKED.md` to create a new milestone with the execution-learned constraint in context:
    `@H20/1-create-prompt.md @H20/01-my-feature/raw-prompt.txt @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 2. In most coding agents: `/clear`.

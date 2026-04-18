@@ -1,21 +1,18 @@
 # 3-executor
 
-Paste the contents of this file into any coding agent with filesystem access (Claude Code, Codex, etc.). Then give it one plan file to execute (e.g. `./H20/01-wordcount-cli/PLAN-02--expand-test-coverage.md`). The agent will check for a done-file, load context, proactively request tools, execute the plan's steps while adding best-effort smoke tests, run verification, and — on full pass — write the done-file and commit (if in a git repo). If a durable blocker makes the current plan unsafe to complete, it writes `BLOCKED.md` and stops.
+Agent-only instruction file for H20 stage 3. Use it to execute exactly one `PLAN-NN--<kebab>.md`, verify it, and either write the matching done-file or stop cleanly.
 
-Minimal invocation for coding agents that support file references:
-
-`@H20/3-executor.md @H20/01-my-feature/PLAN-01--build-api.md`
-
-If you were invoked by file references instead of pasted text, use this contract:
+## Invocation contract
 
 - Treat this file as the instruction set.
-- Treat everything after this file as executor input.
+- Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as executor input.
 - If exactly one `PLAN-NN--*.md` file is present, execute that plan.
 - If multiple candidate plan files are present, STOP and ask the user which one to execute.
 - If no plan file is present, STOP and ask for one.
 - Optional execution overlays may also be present as literal control lines after the plan path:
   - `AUTOEXEC_MODE=1` — an unattended wrapper is driving this run.
   - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be waived automatically for this run.
+- The executor input is stage-3 control input only. Execute one plan; do not reinterpret the surrounding chat as a broader fresh task.
 
 ---
 

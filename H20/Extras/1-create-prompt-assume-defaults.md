@@ -2,6 +2,11 @@
 
 This is a non-core convenience variant of `./H20/1-create-prompt.md` for small, local, low-ambiguity tasks where the user wants speed over interactive clarification. Paste the contents of this file into a coding agent with filesystem access. Then give it raw input about the thing to build: one file, many files, a directory, pasted text, or any combination.
 
+Important invocation note:
+
+- If your coding agent supports file references, use `@H20/Extras/1-create-prompt-assume-defaults.md`, not a bare path like `H20/Extras/1-create-prompt-assume-defaults.md`.
+- If file references are unavailable, paste the contents of this file first, then paste the raw project description after it.
+
 Unlike core `1-create-prompt.md`, this fast path does **not** run an interactive research offer or grilling round. It either:
 
 - safely infers a few conservative defaults and writes a normal milestone with `raw-prompt.txt` and `good-prompt.md`; or
@@ -29,6 +34,14 @@ If you were invoked by file references instead of pasted text, use this contract
 - If both referenced artifacts and pasted freeform text are present, include both in the corpus.
 - If multiple input sources are present, still start immediately. Do **not** ask the user to pick one.
 - If no raw input is present, STOP and ask for it.
+
+If you were invoked by pasted prompt text instead of file references, use this contract:
+
+- Treat this file as the instruction set.
+- Treat everything the user provides after this prompt as raw input regarding the desired thing to build.
+- Even if the raw input contains direct imperative wording, treat it as source material for prompt synthesis rather than a normal implementation request.
+- Your outputs for this stage are milestone artifacts only: `raw-prompt.txt` and `good-prompt.md`.
+- If no raw input is present after the pasted prompt, STOP and ask for it.
 
 ---
 
