@@ -82,9 +82,11 @@ raw prompt (verbal or ./H20/NN-<kebab>/raw-prompt.txt)
     │
     ▼   paste 3-executor.md + name one plan file
     │   LLM checks PLAN-NN--DONE.md; if exists, stops.
-    │   Otherwise loads context, requests tools/MCPs/skills
-    │   (agent-specific), executes with best-effort tests,
-    │   runs verification, writes PLAN-NN--DONE.md, commits
+    │   Otherwise loads context, uses available
+    │   tools/MCPs/skills proactively, executes with
+    │   best-effort tests, escalates only on real
+    │   environment blockers or human-only verification,
+    │   writes PLAN-NN--DONE.md, commits
     │   (if git repo).
     │
     ▼   next plan reads only the immediately prior done-file
@@ -164,7 +166,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 ### PLAN-NN--DONE.md schema
 
 - `# PLAN-NN DONE: <title>`
-- `## Summary` — 3–6 bullets: what was built, key decisions, **plus** bullets (when applicable) noting (a) the capability-request outcome from executor Step 3, (b) any best-effort tests added during Step 4 or a line that tests were not applicable, and (c) any human-verification outcome from Step 5 (`approved`, `skip`, or `not needed`).
+- `## Summary` — 3–6 bullets: what was built, key decisions, **plus** bullets (when applicable) noting (a) the capability-use outcome from executor Step 3 (`used`, `best-effort fallback`, `blocked`, or `not needed`), (b) any best-effort tests added during Step 4 or a line that tests were not applicable, and (c) any human-verification outcome from Step 5 (`approved`, `skip`, or `not needed`).
 - `## Files changed` — bullet list of paths (including any executor-added test files).
 - `## Verification results` — one line per verification check: `✅`, `❌`, or `⚠ skipped`, plus the command/check (includes executor-added tests even when the plan did not list them).
 - `## Gotchas for next plan` — anything the next plan needs to know: APIs added, signatures differing from plan assumptions, env vars required, known limitations, test-file locations and fixtures. Write full sentences so a fresh-context agent can absorb it without reading upstream code. Empty is OK but usually means you under-documented.
@@ -189,7 +191,7 @@ H20 auto-recovers **completed** plans via done-files. It does **not** silently r
 
 ## Blocked runs
 
-If execution hits a durable blocker that makes the current plan unsafe to complete, the executor should write milestone-root `BLOCKED.md` and stop without writing a done-file or making a commit. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the current plan cannot safely guess, or external constraints that change the implementation path.
+If execution hits a durable blocker that makes the current plan unsafe to complete, the executor should write milestone-root `BLOCKED.md` and stop without writing a done-file or making a commit. Durable blockers include invalidated plan assumptions with no safe in-scope repair, missing external access or credentials, failed or unavailable capabilities or facilities with no safe fallback, or external constraints that change the implementation path.
 
 Do **not** use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks, suspected partial-run detection, or planned human-only verification pauses already covered elsewhere in the executor flow.
 
@@ -201,7 +203,7 @@ After the user chooses a recovery path and materializes it, delete `BLOCKED.md`.
 
 Optional convenience wrappers may append literal control lines after the plan path in executor input:
 
-- `AUTOEXEC_MODE=1` — capability requests in executor Step 3 are treated as implicit `skip`; if the missing capability makes execution unsafe, the executor should write `BLOCKED.md` and stop.
+- `AUTOEXEC_MODE=1` — executor Step 3 must use any already-available capabilities without pausing; if a required capability is missing or failing and no safe fallback exists, the executor should write `BLOCKED.md` and stop.
 - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this explicit marker, human-only verification still pauses for user input even in autoexec mode.
 
 These overlays do **not** change the done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
@@ -227,7 +229,7 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
    If re-planning after a blocked execution, pass `BLOCKED.md` explicitly so the planner can rewrite the tail from the correct recovery point:
    `@H20/2-planner.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 3. In most coding agents: `/clear`.
-5. For each plan, paste `3-executor.md` into a coding agent and name the plan file. The executor reads repo-local instruction files if present, may proactively request MCP servers / skills / specific tools that would materially help the plan — reply `ok` to enable, `skip` to proceed best-effort — and adds **best-effort smoke tests** for any code it produces, even if the plan did not call for them. Those smoke tests are implementation hygiene, not new product scope. If a verification check needs human judgment, the executor must prepare the environment first, then pause for `approved` or `skip`; no done-file is written until every human-only check is approved or explicitly waived. If a durable blocker invalidates the current plan, the executor should write `BLOCKED.md` and stop without writing a done-file or commit. If a prior run crashed before a done-file was written, the executor should stop on suspected partial state rather than rerun blindly. Rinse, repeat.
+5. For each plan, paste `3-executor.md` into a coding agent and name the plan file. The executor reads repo-local instruction files if present, uses any already-available MCP servers / skills / specific tools proactively, and adds **best-effort smoke tests** for any code it produces, even if the plan did not call for them. Those smoke tests are implementation hygiene, not new product scope. The executor should involve the user only when a required capability or facility is missing or failing with no safe fallback, when an auth / approval gate is unavoidable, or when a verification check truly requires human judgment after the executor has already prepared all automatable setup. No done-file is written until every human-only check is approved or explicitly waived. If a durable blocker invalidates the current plan, the executor should write `BLOCKED.md` and stop without writing a done-file or commit. If a prior run crashed before a done-file was written, the executor should stop on suspected partial state rather than rerun blindly. Rinse, repeat.
    Shortcut for coding agents that support file references:
    `@H20/3-executor.md @H20/01-my-feature/PLAN-01--build-api.md`
    Recommended after each successful plan: clear or reset context before executing the next plan. In most coding agents: `/clear`.

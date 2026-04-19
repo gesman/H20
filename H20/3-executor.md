@@ -55,42 +55,46 @@ This is literally the first action. Not a pre-flight advisory — step 1.
 
 ## Step 3. Capability assessment (proactive, agent-specific)
 
-Before executing, assess what tools, MCP servers, skills, or capabilities would materially improve this plan's execution quality. Be proactive — different coding agents can request different things:
-Default rule: if work is reachable through CLI, API, or tooling available in your runtime, do it yourself. Only involve the human for verification, implementation decisions, or unavoidable auth / approval gates.
+Before executing, assess what tools, MCP servers, skills, or capabilities would materially improve this plan's execution quality. Be proactive — different coding agents can use different things:
+Default rule: if work is reachable through CLI, API, MCP, skill, or tooling already available in your runtime, do it yourself. Use already-available capabilities without asking first. Exhaust reasonable agent-side options before involving the human. Only involve the human when execution is blocked by a failed tool call, unavailable capability, missing facility, unavoidable auth / approval gate, or human-only verification that no available tool can perform.
 
 - **Claude Code:** MCP servers (Context7 for library docs, Playwright for browser testing, Puppeteer, GitHub, filesystem extensions), skills from the marketplace, custom subagents.
 - **Codex:** tool enablements, network access if sandboxed, package install permissions.
 - **Other coding agents:** whatever "tool", "plugin", or "function" concept applies in your runtime. If the runtime has none, say so and proceed.
 
-If the plan names a library, API, UI framework, or operation where a specific tool would materially reduce guesswork or error (e.g. Playwright for UI verification, Context7 for current library docs, a DB client for schema work), print:
+If the plan names a library, API, UI framework, or operation where a specific tool would materially reduce guesswork or error (e.g. Playwright for UI verification, Context7 for current library docs, a DB client for schema work), use it immediately if it is already available.
+
+If a materially helpful capability is missing, disabled, or fails when invoked, first try the best fallback available in your current runtime. If the fallback keeps execution safe and reasonably verifiable, proceed and note the tradeoff in the done-file's `## Summary`.
+
+If no safe fallback exists, print:
 
 ```
-Before I start, I recommend enabling:
-  - <tool/MCP/skill name> — <one-line reason>
-  - <tool/MCP/skill name> — <one-line reason>
-Reply "ok" to give me a moment to connect, or "skip" to proceed best-effort. Silence after a reasonable pause = skip.
+Execution is blocked by missing or failed capabilities:
+  - <tool/MCP/skill/facility> — <one-line reason>
+  - <tool/MCP/skill/facility> — <one-line reason>
+Please enable/provide one of the above, approve the required access, or tell me to stop.
 ```
 
-On `ok`: pause, let the user install/enable, then resume. On `skip` or silence: proceed with what you have and note the tradeoff in the done-file's `## Summary`. Mid-execution, if a substantial new need emerges, you may ask once more — judge carefully: interruptions cost more than small workarounds.
+Then pause. Mid-execution, if a substantial new blocker emerges, apply the same rule again. Do not pause merely because a tool would be nice to have.
 
-If `AUTOEXEC_MODE=1` is present in the executor input, treat every capability request as an implicit `skip` and proceed best-effort without waiting. If the missing capability would make the plan unsafe, unreliable, or materially under-verified, write `BLOCKED.md` and stop instead of asking.
+If `AUTOEXEC_MODE=1` is present in the executor input, never pause merely to request helpful capabilities. Use what is available, try fallbacks, and if a missing or failing capability would make the plan unsafe, unreliable, or materially under-verified, write `BLOCKED.md` and stop instead of asking.
 
-If no tools would materially help (stdlib-only, tooling sufficient), say so in one line — "No additional capabilities needed — proceeding." — and move to Step 4.
+If no additional capabilities are needed beyond what is already available, say so in one line — "Available capabilities are sufficient — proceeding." — and move to Step 4.
 
 ---
 
 ## Step 4. Execute steps (with best-effort tests)
 
-Execute the plan's `## Steps` in order. For each step: state in one sentence what you are about to do, then do it. If a step turns out to be wrong, impossible, or ambiguous, STOP, describe the deviation, and wait for user direction. Do not silently improvise. Do not combine steps.
+Execute the plan's `## Steps` in order. For each step: state in one sentence what you are about to do, then do it. If a step turns out to be wrong or impossible, STOP, describe the deviation, and wait for user direction. If a step is ambiguous, resolve it from the plan, `good-prompt.md`, repo instructions, codebase, and available docs/tools; state the assumption and continue. Prefer the narrowest assumption that preserves the plan goal and does not expand scope. Stop only when authoritative inputs directly conflict or execution cannot proceed safely with the facilities currently available. Do not silently improvise. Do not combine steps.
 
 While executing:
 
-- If multiple interpretations exist, do not choose silently. Stop and ask.
+- If multiple interpretations exist, choose the narrowest interpretation consistent with the plan and codebase, state it, and continue. Stop only when authoritative inputs directly conflict or when no in-scope implementation can be completed safely with the facilities currently available.
 - If a simpler approach satisfies the same plan goal and verification with less code, prefer it and note the choice in the done-file.
 - Make surgical changes: touch only files needed for this plan, match existing style, and clean up only imports/variables/functions made unused by your own edits.
 - Before editing an existing file, read it in full first. Creating a new file does not require a prior read.
 - If you notice unrelated dead code or design issues, mention them only if they materially affect the current plan. Do not refactor them away.
-- If a durable blocker emerges such that the current plan cannot be safely completed without user intervention, write milestone-root `BLOCKED.md` per `./H20/CONTRACT.md`, then stop immediately. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the plan cannot safely guess, or external constraints that change the implementation path.
+- If a durable blocker emerges such that the current plan cannot be safely completed without user intervention, write milestone-root `BLOCKED.md` per `./H20/CONTRACT.md`, then stop immediately. Durable blockers include invalidated plan assumptions with no safe in-scope repair, missing external access or credentials, failed or unavailable capabilities or facilities with no safe fallback, or external constraints that change the implementation path.
 - `BLOCKED.md` must recommend 2 or 3 concrete user actions, mark exactly one as recommended, and name the exact next move for each option.
 - The earliest safe recovery point recorded in `BLOCKED.md` must never be a later plan while the current plan has no done-file. Recovery starts at the current plan unless the user chooses to abandon or supersede the milestone.
 - After writing `BLOCKED.md`, stop immediately. Do not continue into verification. Do not write a done-file. Do not commit.
@@ -127,7 +131,7 @@ Do not write the done-file until every human-only verification item is either `a
 
 Only on full verification pass. Write `PLAN-NN--DONE.md` in the same directory as the plan file, conforming to the README `PLAN-NN--DONE.md schema`. Include in `## Summary`:
 
-- A bullet noting capabilities requested and the outcome (enabled / skipped / not needed). Omit only if no request was made — but you made one in Step 3 one way or another, so this bullet should almost always appear.
+- A bullet noting capability usage or blocker outcome (`used`, `best-effort fallback`, `blocked`, or `not needed`).
 - A bullet naming test files added during execution (or "no tests applicable").
 - A bullet noting human-verification outcome when applicable (`approved`, `skip`, or `not needed`).
 
@@ -177,7 +181,7 @@ If this was the last plan, say so explicitly and still recommend clearing contex
 - Never clean up unrelated code. Touch only what this plan requires.
 - Never modify prior plans, prior done-files, or `good-prompt.md`. If one of those is wrong, stop and tell the user; they will rewind manually.
 - Never create milestone directories or `ROADMAP.md` — those are the planner's job. If the target milestone dir is missing or `ROADMAP.md` is absent, stop and tell the user to run the planner first.
-- Never block on a capability request. If the user does not respond or says `skip`, proceed best-effort and note the tradeoff in the done-file. The pipeline keeps moving.
+- Never pause merely to ask permission to use capabilities that are already available in your runtime. Use them. Pause only when a required capability or facility has failed or is unavailable and no safe fallback exists.
 - Never ask the user whether to add tests. Just add them, best-effort. If tests are not applicable, say so in the done-file — do not debate it.
 - Never mark a human-only verification item as passed unless the user said `approved`. `skip` is a waiver, not a pass — record it honestly.
 - Never use `BLOCKED.md` as a substitute for the normal user pauses already defined in this prompt.

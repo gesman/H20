@@ -76,7 +76,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 ### PLAN-NN--DONE.md schema
 
 - `# PLAN-NN DONE: <title>`
-- `## Summary` — 3–6 bullets covering what was built, key decisions, capability-request outcome, tests added or not applicable, and human-verification outcome when applicable.
+- `## Summary` — 3–6 bullets covering what was built, key decisions, capability-use outcome (`used`, `best-effort fallback`, `blocked`, or `not needed`), tests added or not applicable, and human-verification outcome when applicable.
 - `## Files changed` — bullet list of paths.
 - `## Verification results` — one line per check using `✅`, `❌`, or `⚠ skipped`.
 - `## Gotchas for next plan` — full-sentence notes the next plan needs.
@@ -103,7 +103,7 @@ H20 auto-recovers completed plans through done-files. It does not silently recov
 
 ## Blocked runs
 
-If execution hits a durable blocker that makes the current plan unsafe to complete, the executor should write milestone-root `BLOCKED.md` and stop without writing a done-file or making a commit. Durable blockers include invalidated plan assumptions, missing external access or credentials, product decisions the current plan cannot safely guess, or external constraints that change the implementation path.
+If execution hits a durable blocker that makes the current plan unsafe to complete, the executor should write milestone-root `BLOCKED.md` and stop without writing a done-file or making a commit. Durable blockers include invalidated plan assumptions with no safe in-scope repair, missing external access or credentials, failed or unavailable capabilities or facilities with no safe fallback, or external constraints that change the implementation path.
 
 Do not use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks, suspected partial-run detection, or planned human-only verification pauses already covered elsewhere in the executor flow.
 
@@ -113,7 +113,7 @@ After the user chooses a recovery path and materializes it, delete `BLOCKED.md`.
 
 Optional convenience wrappers may append literal control lines after the plan path in executor input:
 
-- `AUTOEXEC_MODE=1` — capability requests in executor step 3 are treated as implicit `skip`; if the missing capability makes execution unsafe, the executor should write `BLOCKED.md` and stop.
+- `AUTOEXEC_MODE=1` — executor step 3 must use any already-available capabilities without pausing; if a required capability is missing or failing and no safe fallback exists, the executor should write `BLOCKED.md` and stop.
 - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this marker, human-only verification still pauses for user input even in autoexec mode.
 
 These overlays do not change the done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
