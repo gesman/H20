@@ -1,6 +1,6 @@
 # Extras
 
-Optional convenience prompts and scripts live here. They are **not** part of H20's core contract, do not change the contract schemas in `./H20/CONTRACT.md`, and can be ignored entirely.
+Optional convenience prompts and scripts live here. They are **not** part of H20's core milestone state machine, do not change done-file recovery or completion semantics, and can be ignored entirely.
 
 Current extras:
 
@@ -8,12 +8,14 @@ Current extras:
 - `2a-env-checker` — scans either a milestone's unfinished plans or one specific plan file and prints a manual checklist of likely environment capabilities to validate before execution.
 - `3-autoexec-claude` — Claude Code wrapper that executes the next pending plan(s) for a milestone in a loop using the current user's Claude subscription.
 - `3-autoexec-codex` — Codex CLI wrapper that executes the next pending plan(s) for a milestone in a loop using the current user's Codex login.
+- `4-review.md` — review-stage prompt that writes immutable review snapshots and follow-up raw prompts under `./H20/Reviews/<milestone>/`.
 
 Notes:
 
 - `1-create-prompt-assume-defaults.md` is still agent-agnostic, but it is intentionally a convenience shortcut rather than part of core H20. It writes normal milestone artifacts and may refuse broad or ambiguous requests.
 - `3-autoexec-claude` is Claude-specific by design. It is a user conveniencer, not part of the core H20 payload.
 - `3-autoexec-codex` is Codex-specific by design. It is a user conveniencer, not part of the core H20 payload.
+- `4-review.md` is agent-agnostic in wording, but it is intentionally non-core. It does not modify milestone state and only writes review artifacts under `./H20/Reviews/`.
 - Autoexec runs pass literal control lines into `3-executor.md`:
   - `AUTOEXEC_MODE=1`
   - `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used
@@ -36,6 +38,17 @@ Notes:
 - `2a-env-checker <milestone-dir>`: scans unfinished plans inside that milestone
 - `2a-env-checker <plan-file>`: scans that specific plan file
 - accepted path styles include `./H20/01-my-feature`, `./01-my-feature`, and direct `PLAN-NN--*.md` paths
+
+`4-review.md` usage:
+
+- file-reference example:
+  - `@H20/Extras/4-review.md @H20/05-my-milestone/`
+- also works against one completed plan:
+  - `@H20/Extras/4-review.md @H20/05-my-milestone/PLAN-03--api-hardening.md`
+- do not use a bare path like `H20/Extras/4-review.md` and expect the agent to load it; use `@...` or paste the file contents
+- accepted use case: independent review of completed milestone outputs or one completed plan's outputs
+- output: immutable review artifact pairs under `./H20/Reviews/<milestone>/`, such as `REVIEW-01.md` and `raw-review-prompt-01.md`
+- repeated runs by different agents create `REVIEW-02.md`, `raw-review-prompt-02.md`, and so on; earlier review artifacts are never overwritten
 
 `3-autoexec-codex` usage:
 

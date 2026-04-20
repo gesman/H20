@@ -101,12 +101,17 @@ Inside a target project using H20:
 ├── 1-create-prompt.md         (meta-prompt; copy from source or paste)
 ├── 2-planner.md               (meta-prompt)
 ├── 3-executor.md              (meta-prompt)
-├── Extras/                    (optional convenience scripts; non-contractual)
+├── Extras/                    (optional convenience prompts and scripts; non-contractual)
 │   ├── 2a-env-checker
 │   ├── 3-autoexec-claude
 │   ├── 3-autoexec-codex
+│   ├── 4-review.md
 │   ├── README.md
 │   └── helpers/               (support files used by optional extras)
+├── Reviews/                   (optional review snapshots; non-contractual)
+│   └── 01-<first-milestone>/
+│       ├── REVIEW-01.md
+│       └── raw-review-prompt-01.md
 ├── CONTRACT.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
@@ -133,6 +138,8 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - **Good prompt:** always exactly `good-prompt.md`.
 - **Roadmap:** always exactly `ROADMAP.md`.
 - **Blocked handoff:** optional milestone-root `BLOCKED.md`. At most one unresolved blocker file per milestone.
+- **Review snapshots:** optional `./H20/Reviews/NN-<kebab>/REVIEW-NN.md`, where the directory name matches the reviewed milestone and the review file number is local to that review directory.
+- **Review follow-up prompts:** optional `./H20/Reviews/NN-<kebab>/raw-review-prompt-NN.md`, paired with the review snapshot that produced it.
 
 ## Schemas
 
@@ -180,6 +187,30 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - `## Earliest safe recovery point` — one of `resume current plan`, `replan from current plan`, `redo good-prompt`, or `start new milestone`, followed by one-sentence reasoning. The executor must never point recovery at a later plan while the current plan has no done-file.
 - `## Workspace state` — bullets covering files already touched, what is safe to keep, what is safe to discard, and any verification already run.
 - `## Suggested user actions` — 2 or 3 labeled options (`A.`, `B.`, optional `C.`), with exactly one marked recommended. Each option names the exact next move (edit, planner invocation, create-prompt invocation, or external action) and a one-sentence why.
+
+### Optional review artifacts
+
+These artifacts are produced only by non-core helpers such as `./H20/Extras/4-review.md`. They live under `./H20/Reviews/` and do **not** change milestone completion semantics, done-file recovery, or executor behavior.
+
+### REVIEW-NN.md schema
+
+- `# Review NN: <reviewed milestone title>`
+- `## Reviewed scope` — the reviewed milestone path, whether the run covered the whole milestone or a specific completed plan, and any explicit exclusions.
+- `## Review basis` — review run date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected.
+- `## Independent findings` — numbered list, ordered by severity. Each finding should include: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
+- `## Deferred or acceptable tradeoffs` (optional) — items the reviewer believes may be acceptable for now but that should be made explicit for the user.
+- `## Cross-cutting or unrelated observations` (optional) — important observations that do not cleanly belong in the next milestone derived from this review.
+- `## Recommended follow-up milestones` — 1 to 3 concrete next-milestone options, with exactly one marked recommended. Each option should name a narrow goal and the findings it would absorb.
+
+### raw-review-prompt-NN.md schema
+
+- `# Raw review prompt NN: <proposed follow-up title>`
+- `## Source review` — path to the paired `REVIEW-NN.md` and one sentence describing the review scope.
+- `## Goal` — one paragraph describing the follow-up milestone to create.
+- `## Findings included` — numbered list of the review findings intentionally carried into this follow-up scope.
+- `## Findings explicitly excluded` — numbered or bulleted list of reviewed findings intentionally left out, deferred, or treated as unrelated.
+- `## Constraints` — explicit scope fences, assumptions, and boundaries for the next milestone.
+- `## Success criteria` — bulleted, verifiable outcomes expected from the follow-up milestone.
 
 ## Recovery rule
 
@@ -236,7 +267,31 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
 
 ## Optional helpers
 
-`./H20/Extras/` contains convenience scripts only. They are outside the core H20 contract, may be agent-specific, and can be ignored completely if you prefer the pure copy-paste flow.
+`./H20/Extras/` contains convenience prompts and scripts only. They are outside the core H20 contract, may be agent-specific, and can be ignored completely if you prefer the pure copy-paste flow.
+
+### 4-review
+
+Purpose: run an independent review of code, schemas, tests, and logic produced by a completed plan or milestone, then write two immutable artifacts under `./H20/Reviews/`: a human-facing review snapshot and a machine-facing follow-up raw prompt. This helper is non-core by design and does **not** create a second completion state for milestones.
+
+Syntax:
+
+```bash
+@H20/Extras/4-review.md @H20/05-my-milestone/
+@H20/Extras/4-review.md @H20/05-my-milestone/PLAN-03--api-hardening.md
+```
+
+Accepted path styles include both `./H20/05-my-milestone` and `./05-my-milestone`, plus direct `PLAN-NN--*.md` paths.
+
+Behavior:
+
+- With a milestone dir, it reviews the union of files recorded by completed done-files in that milestone.
+- With a completed plan file, it reviews that plan's recorded outputs only, while still writing artifacts under the parent milestone's review directory.
+- It writes the next free immutable pair:
+  - `./H20/Reviews/05-my-milestone/REVIEW-01.md`
+  - `./H20/Reviews/05-my-milestone/raw-review-prompt-01.md`
+- Re-running the review with a different agent creates `REVIEW-02.md` and `raw-review-prompt-02.md`, and so on. Older review artifacts are never overwritten.
+- Its first pass is an implementation review of what exists, not a plan-compliance audit. It may consult milestone context later only to classify findings and draft a follow-up scope.
+- The generated `raw-review-prompt-NN.md` is intentionally narrower than the full review and is meant for the user to read, trim, and then feed into the normal H20 pipeline via `@H20/1-create-prompt.md`.
 
 ### 2a-env-checker
 

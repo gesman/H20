@@ -16,7 +16,7 @@ fi
 
 declare -a RSYNC_EXCLUDES=()
 declare -a PRESERVED_DIR_NAMES=()
-declare -a STATIC_PRESERVE_IF_PRESENT=("RawPrompts")
+declare -a STATIC_PRESERVE_IF_PRESENT=("RawPrompts" "Reviews")
 
 confirm_non_project_dir() {
     local reply=""
@@ -186,9 +186,11 @@ trap cleanup EXIT
 echo "Source: ${SOURCE_DIR}/"
 echo "Target: ${TARGET_DIR}/"
 echo "Preserving local project directories matching ${PRESERVE_PROJECT_DIR_DISPLAY}"
-if path_in_list "RawPrompts" "${PRESERVED_DIR_NAMES[@]}"; then
-    echo "Preserving local directory /RawPrompts/"
-fi
+for dir_name in "${STATIC_PRESERVE_IF_PRESENT[@]}"; do
+    if path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
+        echo "Preserving local directory /${dir_name}/"
+    fi
+done
 echo "Starting sync..."
 
 rsync -ani --delete \

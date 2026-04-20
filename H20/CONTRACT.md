@@ -15,8 +15,13 @@ Inside a target project using H20:
 │   ├── 2a-env-checker
 │   ├── 3-autoexec-claude
 │   ├── 3-autoexec-codex
+│   ├── 4-review.md
 │   ├── README.md
 │   └── helpers/
+├── Reviews/
+│   └── 01-<first-milestone>/
+│       ├── REVIEW-01.md
+│       └── raw-review-prompt-01.md
 ├── CONTRACT.md
 ├── 01-<first-milestone>/
 │   ├── raw-prompt.txt
@@ -43,6 +48,8 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - Good prompt: `good-prompt.md`.
 - Roadmap: `ROADMAP.md`.
 - Blocked handoff: optional milestone-root `BLOCKED.md`.
+- Review snapshots: optional `./H20/Reviews/NN-<kebab>/REVIEW-NN.md`, where the review directory name matches the reviewed milestone.
+- Review follow-up prompts: optional `./H20/Reviews/NN-<kebab>/raw-review-prompt-NN.md`, paired with the review snapshot that produced it.
 
 ## Schemas
 
@@ -90,6 +97,30 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - `## Earliest safe recovery point` — one of `resume current plan`, `replan from current plan`, `redo good-prompt`, or `start new milestone`, plus one-sentence reasoning.
 - `## Workspace state` — what changed, what is safe to keep, what is safe to discard, and any verification already run.
 - `## Suggested user actions` — 2 or 3 labeled options, with exactly one recommended.
+
+### Optional review artifacts
+
+These artifacts are produced only by non-core helpers such as `./H20/Extras/4-review.md`. They live under `./H20/Reviews/` and do not change milestone completion semantics, done-file recovery, or executor behavior.
+
+### REVIEW-NN.md schema
+
+- `# Review NN: <reviewed milestone title>`
+- `## Reviewed scope` — the reviewed milestone path, whether the run covered the whole milestone or a specific completed plan, and any explicit exclusions.
+- `## Review basis` — review run date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected.
+- `## Independent findings` — numbered list ordered by severity. Each finding includes: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
+- `## Deferred or acceptable tradeoffs` — optional.
+- `## Cross-cutting or unrelated observations` — optional.
+- `## Recommended follow-up milestones` — 1 to 3 concrete next-milestone options, with exactly one recommended.
+
+### raw-review-prompt-NN.md schema
+
+- `# Raw review prompt NN: <proposed follow-up title>`
+- `## Source review` — path to the paired `REVIEW-NN.md` and one sentence describing the review scope.
+- `## Goal` — one paragraph describing the follow-up milestone to create.
+- `## Findings included` — numbered list of review findings intentionally carried into the follow-up scope.
+- `## Findings explicitly excluded` — numbered or bulleted list of findings intentionally left out, deferred, or treated as unrelated.
+- `## Constraints` — explicit scope fences, assumptions, and boundaries for the next milestone.
+- `## Success criteria` — bulleted, verifiable outcomes expected from the follow-up milestone.
 
 ## Recovery rule
 
