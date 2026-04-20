@@ -16,6 +16,7 @@ fi
 
 declare -a RSYNC_EXCLUDES=()
 declare -a PRESERVED_DIR_NAMES=()
+declare -a STATIC_PRESERVE_IF_PRESENT=("RawPrompts")
 
 confirm_non_project_dir() {
     local reply=""
@@ -60,6 +61,17 @@ path_in_list() {
     done
 
     return 1
+}
+
+add_preserved_dir() {
+    local dir_name="$1"
+
+    if path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
+        return 0
+    fi
+
+    PRESERVED_DIR_NAMES+=("${dir_name}")
+    RSYNC_EXCLUDES+=(--exclude="/${dir_name}/")
 }
 
 make_temp_file() {
@@ -149,13 +161,18 @@ if [[ "${SOURCE_DIR}" == "${TARGET_DIR}" ]]; then
     exit 1
 fi
 
+for dir_name in "${STATIC_PRESERVE_IF_PRESENT[@]}"; do
+    if [[ -d "${TARGET_DIR}/${dir_name}" ]]; then
+        add_preserved_dir "${dir_name}"
+    fi
+done
+
 shopt -s nullglob
 for dir_path in "${TARGET_DIR}"/*; do
     [[ -d "${dir_path}" ]] || continue
     dir_name="$(basename "${dir_path}")"
     if [[ "${dir_name}" =~ ${PRESERVE_PROJECT_DIR_REGEX} ]]; then
-        PRESERVED_DIR_NAMES+=("${dir_name}")
-        RSYNC_EXCLUDES+=(--exclude="/${dir_name}/")
+        add_preserved_dir "${dir_name}"
     fi
 done
 shopt -u nullglob
@@ -169,6 +186,9 @@ trap cleanup EXIT
 echo "Source: ${SOURCE_DIR}/"
 echo "Target: ${TARGET_DIR}/"
 echo "Preserving local project directories matching ${PRESERVE_PROJECT_DIR_DISPLAY}"
+if path_in_list "RawPrompts" "${PRESERVED_DIR_NAMES[@]}"; then
+    echo "Preserving local directory /RawPrompts/"
+fi
 echo "Starting sync..."
 
 rsync -ani --delete \
