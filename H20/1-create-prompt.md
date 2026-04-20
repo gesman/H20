@@ -134,7 +134,7 @@ Print:
 ### I need to grill you before I write the plan. Please answer these:
 ```
 
-Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, include one explicit reply-format line (for example: `"1B, 2A, 3 freeform"`). Users can always answer freeform.
+Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, always include **two separate lines**: first a neutral reply-format line (for example: `"Reply format: 1B, 2A, 3 freeform"`), then a separate recommendation line. If every question in the batch has a clear default, the second line should give the combined recommended answer set (for example: `"Recommended-default reply, if that matches your intent: 1B, 2B, 3A"`). If one or more questions have no clear default, the second line should say that explicitly instead of faking a full recommended set (for example: `"No combined recommended-default reply because question 3 has no clear default."`). Users can always answer freeform.
 
 Then emit:
 
