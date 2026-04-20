@@ -197,6 +197,7 @@ These artifacts are produced only by non-core helpers such as `./H20/Extras/4-re
 - `# Review NN: <reviewed milestone title>`
 - `## Reviewed scope` — the reviewed milestone path, whether the run covered the whole milestone or a specific completed plan, and any explicit exclusions.
 - `## Review basis` — review run date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected.
+- `## Seeded concerns` (optional) — concerns injected by the user as pasted text and/or referenced files. Each entry should record the original concern, its source, the outcome (`confirmed`, `disproved`, `not applicable`, or `inconclusive`), and one-sentence reasoning.
 - `## Independent findings` — numbered list, ordered by severity. Each finding should include: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
 - `## Deferred or acceptable tradeoffs` (optional) — items the reviewer believes may be acceptable for now but that should be made explicit for the user.
 - `## Cross-cutting or unrelated observations` (optional) — important observations that do not cleanly belong in the next milestone derived from this review.
@@ -286,6 +287,7 @@ Behavior:
 
 - With a milestone dir, it reviews the union of files recorded by completed done-files in that milestone.
 - With a completed plan file, it reviews that plan's recorded outputs only, while still writing artifacts under the parent milestone's review directory.
+- It accepts optional seeded concerns after the target as pasted text and/or referenced files. These are review hints, not scope redefinition.
 - It writes the next free immutable pair:
   - `./H20/Reviews/05-my-milestone/REVIEW-01.md`
   - `./H20/Reviews/05-my-milestone/raw-review-prompt-01.md`

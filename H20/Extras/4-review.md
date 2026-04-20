@@ -1,14 +1,14 @@
 # 4-review
 
-This is a non-core review-stage prompt for H20. Paste the contents of this file into a coding agent with filesystem access, then provide either:
+This is a non-core review-stage prompt for H20. Paste the contents of this file into a coding agent with filesystem access, then provide:
 
-- one completed milestone directory such as `./H20/05-my-milestone/`; or
-- one completed plan file such as `./H20/05-my-milestone/PLAN-03--api-hardening.md`.
+- exactly one completed milestone directory such as `./H20/05-my-milestone/`; or exactly one completed plan file such as `./H20/05-my-milestone/PLAN-03--api-hardening.md`; and
+- optionally, any number of seeded review concerns supplied as pasted text and/or referenced files.
 
 Important invocation note:
 
 - If your coding agent supports file references, use `@H20/Extras/4-review.md`, not a bare path like `H20/Extras/4-review.md`.
-- If file references are unavailable, paste the contents of this file first, then paste the target milestone or plan path after it.
+- If file references are unavailable, paste the contents of this file first, then paste the target milestone or plan path after it, followed by any optional review concerns.
 
 This helper is intentionally outside core H20. It does **not** modify existing milestones, does **not** change `PLAN-NN--DONE.md` semantics, and does **not** create a second completion state. Its only job is to write immutable review artifacts under `./H20/Reviews/`.
 
@@ -20,12 +20,17 @@ Also supported:
 
 - `@H20/Extras/4-review.md @H20/05-my-milestone/PLAN-03--api-hardening.md`
 - `@H20/Extras/4-review.md @05-my-milestone`
+- `@H20/Extras/4-review.md @H20/05-my-milestone/ "Also inspect whether /config.yaml could be world-accessible."`
+- `@H20/Extras/4-review.md @H20/05-my-milestone/ @other-concerns.txt`
+- `@H20/Extras/4-review.md @H20/05-my-milestone/ @other-concerns.txt "Pay extra attention to auth bypass and public config exposure."`
 
 If you were invoked by file references instead of pasted text, use this contract:
 
 - Treat this file as the instruction set.
 - Treat everything after this file as review control input.
-- If exactly one milestone dir or exactly one plan file is present, use it.
+- Resolve exactly one milestone dir or exactly one plan file as the review target.
+- Treat everything else after the target as optional seeded review concerns.
+- Seeded concerns may be pasted free text, one or more referenced text files, or both.
 - If multiple milestone / plan targets are present, STOP and ask the user which one to review.
 - If no target is present, STOP and ask for one.
 
@@ -33,6 +38,8 @@ If you were invoked by pasted prompt text instead of file references, use this c
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file as review control input.
+- Resolve exactly one milestone dir or exactly one plan file as the review target.
+- Treat everything else after the target as optional seeded review concerns.
 - If no milestone or plan target is present in that control input, STOP and ask for one.
 
 ---
@@ -45,6 +52,8 @@ You are an independent reviewer. Your job is to review what was actually produce
 - `raw-review-prompt-NN.md` — narrower, machine-facing draft prompt for a possible follow-up milestone.
 
 Your primary pass is a review of the implementation **as it exists**, not a certification that it matched the original plan. You may consult milestone context later to classify findings and to draft a sane follow-up scope, but you must not let the original plan excuse defects during the independent pass.
+
+If the user supplied seeded review concerns, treat them as review hints, not as scope redefinition. They should steer your attention, not replace the independent review.
 
 Run the six phases below in order. Do not merge them.
 
@@ -65,6 +74,10 @@ Run the six phases below in order. Do not merge them.
 6. The output pair must be:
    - `REVIEW-NN.md`
    - `raw-review-prompt-NN.md`
+7. Build a seeded-concerns list from any optional review hints that accompanied the target:
+   - preserve the original wording where possible;
+   - if a seeded concern came from a referenced file, read that file and include each distinct concern it contains;
+   - if no seeded concerns were supplied, record that explicitly.
 
 If your runtime cannot read or write files, STOP and say H20 review expects a coding agent with filesystem access.
 
@@ -72,7 +85,8 @@ Before proceeding, print one short line naming:
 
 - the reviewed scope;
 - the owning milestone;
-- the review output pair you are about to write.
+- the review output pair you are about to write;
+- whether seeded concerns were supplied.
 
 ---
 
@@ -101,12 +115,14 @@ Rules:
   - tests named there;
   - adjacent files you must read to understand correctness of those outputs.
 - If repo-local instruction files exist at the project root (`CLAUDE.md`, `AGENTS.md`, or similarly obvious agent-instruction files under `.claude/` or `.agents/`), read them before inspecting code and follow them.
+- Read any referenced seeded-concern files in full before starting the review.
 
 At the end of this phase, print:
 
 - the completed plans included in scope;
 - any plans excluded because they are incomplete;
-- the concrete file list you intend to inspect.
+- the concrete file list you intend to inspect;
+- the seeded concerns list you will explicitly try to confirm, disprove, or retire.
 
 ---
 
@@ -139,6 +155,15 @@ Record findings in severity order. Use this severity scale:
 - `minor` — lower-risk issue, maintainability concern, or weak test gap.
 
 Do not suppress findings just because they may later be accepted as tradeoffs.
+
+For each seeded concern, explicitly try to classify it as one of:
+
+- `confirmed`
+- `disproved`
+- `not applicable`
+- `inconclusive`
+
+This classification must be recorded in `REVIEW-NN.md` even if the concern produces no independent finding.
 
 ---
 
@@ -183,6 +208,12 @@ Requirements:
   - reviewer / agent label if known, otherwise `unknown`;
   - completed done-files used to derive scope;
   - concrete files inspected.
+- `## Seeded concerns` is optional; omit it only if no concerns were supplied.
+- Each seeded concern entry must include:
+  - the original concern text;
+  - its source (`pasted`, `<path>`, or both);
+  - outcome (`confirmed`, `disproved`, `not applicable`, or `inconclusive`);
+  - one-sentence reasoning or evidence.
 - `## Independent findings` must be a numbered list in severity order.
 - Each finding must contain:
   - severity;
@@ -207,6 +238,7 @@ Rules:
 - Keep it narrower than `REVIEW-NN.md`.
 - Carry forward only the findings you recommend turning into a fresh milestone.
 - Explicitly list excluded, deferred, or unrelated findings so the scope boundary is visible.
+- Include seeded concerns in the follow-up prompt only if they survived review as `confirmed` or `inconclusive` and belong in the recommended next milestone.
 - Write it as raw source material suitable for feeding into `./H20/1-create-prompt.md`, not as a replacement for `good-prompt.md`.
 - Do not attempt to plan or execute the follow-up work here.
 - Do not overwrite any earlier review artifacts.
@@ -229,6 +261,7 @@ End with a compact handoff:
 - Do not overwrite earlier review snapshots or follow-up prompts.
 - Do not review incomplete plan outputs as if they were complete.
 - Do not silently widen scope from one milestone into unrelated repo areas.
+- Do not let seeded concerns replace the actual review scope derived from completed milestone outputs.
 - Do not let plan intent excuse defects during the independent review pass.
 - Do not auto-merge findings from multiple review runs. Each run is an immutable snapshot.
 - Do not assume the generated `raw-review-prompt-NN.md` must carry every finding forward. Be explicit about exclusions.
@@ -250,6 +283,13 @@ Fill this in when writing `./H20/Reviews/<milestone>/REVIEW-NN.md`. Omit empty o
 ## Review basis
 
 <review date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected>
+
+## Seeded concerns
+
+- Concern: <original concern text>
+  Source: <pasted|path|both>
+  Outcome: <confirmed|disproved|not applicable|inconclusive>
+  Reasoning: <one sentence>
 
 ## Independent findings
 

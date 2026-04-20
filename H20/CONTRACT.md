@@ -107,6 +107,7 @@ These artifacts are produced only by non-core helpers such as `./H20/Extras/4-re
 - `# Review NN: <reviewed milestone title>`
 - `## Reviewed scope` — the reviewed milestone path, whether the run covered the whole milestone or a specific completed plan, and any explicit exclusions.
 - `## Review basis` — review run date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected.
+- `## Seeded concerns` — optional. Each entry records the original concern, its source, the outcome (`confirmed`, `disproved`, `not applicable`, or `inconclusive`), and one-sentence reasoning.
 - `## Independent findings` — numbered list ordered by severity. Each finding includes: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
 - `## Deferred or acceptable tradeoffs` — optional.
 - `## Cross-cutting or unrelated observations` — optional.
