@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_SOURCE_DIR="/home/gesman/PROJECTS/H20/H20"
+SOURCE_DIR="${1:-${PULLH20_SOURCE_DIR:-${DEFAULT_SOURCE_DIR}}}"
+PROJECT_DIR="$(pwd -P)"
+TARGET_DIR="${PROJECT_DIR}/H20"
+PRESERVE_PROJECT_DIR_REGEX='^[0-9]+-.*$'
+PRESERVE_PROJECT_DIR_DISPLAY='/[0-9]+-.*/'
+
+if [[ $# -gt 1 ]]; then
+    echo "Usage: $0 [source_dir]"
+    echo "Optional env override: PULLH20_SOURCE_DIR=/path/to/H20/H20"
+    exit 1
+fi
+
+declare -a RSYNC_EXCLUDES=()
+declare -a PRESERVED_DIR_NAMES=()
+
+confirm_non_project_dir() {
+    local reply=""
+
+    if [[ -d "${PROJECT_DIR}/.git" || -f "${PROJECT_DIR}/.gitignore" ]]; then
+        return 0
+    fi
+
+    printf "Doesn't look like a project dir, proceed (y/N)? "
+    IFS= read -r reply
+    if [[ "${reply}" == "y" || "${reply}" == "Y" ]]; then
+        return 0
+    fi
+
+    echo "exited per user request"
+    exit 1
+}
+
+path_is_preserved() {
+    local rel_path="$1"
+    local first_component="${rel_path%%/*}"
+    local preserved_dir=""
+
+    for preserved_dir in "${PRESERVED_DIR_NAMES[@]}"; do
+        if [[ "${first_component}" == "${preserved_dir}" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+path_in_list() {
+    local needle="$1"
+    shift
+
+    local entry=""
+    for entry in "$@"; do
+        if [[ "${entry}" == "${needle}" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+make_temp_file() {
+    if mktemp "${TMPDIR:-/tmp}/pullh20.XXXXXX" 2>/dev/null; then
+        return
+    fi
+
+    mktemp -t pullh20
+}
+
+report_sync_results() {
+    local dry_run_file="$1"
+    local line=""
+    local path=""
+    local item=""
+    local update_type=""
+    local file_type=""
+    local rel_path=""
+    local -a changed_paths=()
+
+    while IFS= read -r line || [[ -n "${line}" ]]; do
+        if [[ "${line}" =~ ^\*deleting[[:space:]]+(.+)$ ]]; then
+            path="${BASH_REMATCH[1]}"
+            echo "[deleted] ${path}"
+            continue
+        fi
+
+        if [[ ${#line} -ge 12 && "${line:11:1}" == " " ]]; then
+            item="${line:0:11}"
+            path="${line:12}"
+            update_type="${item:0:1}"
+            file_type="${item:1:1}"
+
+            case "${update_type}" in
+                '>' | 'c' | 'h')
+                    if [[ "${path}" == "./" ]]; then
+                        continue
+                    fi
+                    if [[ "${file_type}" == "d" ]]; then
+                        echo "[updated-dir] ${path}"
+                    else
+                        changed_paths+=("${path}")
+                        echo "[copied] ${path}"
+                    fi
+                    ;;
+                *)
+                    echo "${line}"
+                    ;;
+            esac
+            continue
+        fi
+
+        echo "${line}"
+    done < "${dry_run_file}"
+
+    while IFS= read -r rel_path || [[ -n "${rel_path}" ]]; do
+        [[ -n "${rel_path}" ]] || continue
+        if path_is_preserved "${rel_path}"; then
+            continue
+        fi
+        if path_in_list "${rel_path}" "${changed_paths[@]}"; then
+            continue
+        fi
+        echo "[unchanged] ${rel_path}"
+    done < <(
+        cd "${SOURCE_DIR}" && find . -type f -print \
+            | sed 's#^\./##' \
+            | LC_ALL=C sort
+    )
+}
+
+if [[ ! -d "${SOURCE_DIR}" ]]; then
+    echo "Missing source directory: ${SOURCE_DIR}"
+    exit 1
+fi
+
+confirm_non_project_dir
+mkdir -p "${TARGET_DIR}"
+
+if [[ ! -x "$(command -v rsync)" ]]; then
+    echo "Required command not found: rsync"
+    exit 1
+fi
+
+if [[ "${SOURCE_DIR}" == "${TARGET_DIR}" ]]; then
+    echo "Source and target directories must be different."
+    exit 1
+fi
+
+shopt -s nullglob
+for dir_path in "${TARGET_DIR}"/*; do
+    [[ -d "${dir_path}" ]] || continue
+    dir_name="$(basename "${dir_path}")"
+    if [[ "${dir_name}" =~ ${PRESERVE_PROJECT_DIR_REGEX} ]]; then
+        PRESERVED_DIR_NAMES+=("${dir_name}")
+        RSYNC_EXCLUDES+=(--exclude="/${dir_name}/")
+    fi
+done
+shopt -u nullglob
+
+DRY_RUN_FILE="$(make_temp_file)"
+cleanup() {
+    rm -f "${DRY_RUN_FILE}"
+}
+trap cleanup EXIT
+
+echo "Source: ${SOURCE_DIR}/"
+echo "Target: ${TARGET_DIR}/"
+echo "Preserving local project directories matching ${PRESERVE_PROJECT_DIR_DISPLAY}"
+echo "Starting sync..."
+
+rsync -ani --delete \
+    "${RSYNC_EXCLUDES[@]}" \
+    "${SOURCE_DIR}/" "${TARGET_DIR}/" \
+    > "${DRY_RUN_FILE}"
+
+if [[ -s "${DRY_RUN_FILE}" ]]; then
+    rsync -a --delete \
+        "${RSYNC_EXCLUDES[@]}" \
+        "${SOURCE_DIR}/" "${TARGET_DIR}/"
+fi
+
+report_sync_results "${DRY_RUN_FILE}"
+
+completed_at="$(date '+%Y-%m-%dT%H:%M:%S%:z')"
+echo "Synced ${SOURCE_DIR}/ -> ${TARGET_DIR}/"
+echo "Completed at: ${completed_at}"
