@@ -20,6 +20,7 @@ Notes:
   - `AUTOEXEC_MODE=1`
   - `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used
 - Autoexec still honors H20 recovery semantics. `BLOCKED.md` stops the loop. Missing done-file creation after a run is treated as a handoff / stop condition.
+- Autoexec `--dry-run` prints the resolved milestone and selected pending plans without launching the agent or writing files.
 
 `1-create-prompt-assume-defaults.md` usage:
 
@@ -63,5 +64,6 @@ Notes:
   - `--steps N`: stop after N plans
   - `--model <model-id>`: override the Codex CLI default model for this run; the current tested explicit model is `gpt-5.4`
   - `--skiphuman`: pass `AUTOEXEC_SKIP_HUMAN=1` so human-only checks are recorded as skipped
+  - `--dry-run`: print the resolved milestone and selected pending plans without launching Codex or writing files
 - Codex runs use `-a never`, `--sandbox danger-full-access`, `--ephemeral`, and `--skip-git-repo-check`
 - If `--model gpt-5-codex` is passed, the wrapper rewrites it to `gpt-5.4` before launching Codex because ChatGPT-backed Codex CLI rejects the older alias.

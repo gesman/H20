@@ -25,7 +25,7 @@ The files under `./H20/` are agent-only instruction files. User-facing usage gui
    
    `./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.4 --skiphuman [--steps 2]`
 
-   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending plan(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped.
+   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending plan(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected plans without launching the agent.
 
 ## Why H20
 
@@ -322,10 +322,11 @@ Purpose: Claude Code wrapper that executes the next pending H20 plan(s) for one 
 Syntax:
 
 ```bash
-./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature [--steps N] [--model sonnet|opus|<full-model>] [--skiphuman] [--no-stream]
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature [--steps N] [--model sonnet|opus|<full-model>] [--skiphuman] [--no-stream] [--dry-run]
 ```
 
 Accepted milestone path styles include both `./H20/01-my-feature` and `./01-my-feature`.
+If `--model` is omitted, `3-autoexec-claude` defaults to `opus`.
 
 Examples:
 
@@ -334,12 +335,14 @@ Examples:
 ./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --steps 2
 ./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --model opus
 ./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --skiphuman
+./H20/Extras/3-autoexec-claude --milestone ./H20/01-my-feature --dry-run
 ```
 
 Behavior:
 
 - Streaming output is on by default; `--no-stream` disables it.
 - The wrapper defaults Claude Code permissions to `--dangerously-skip-permissions`.
+- `--dry-run` prints the resolved milestone and selected pending plans without launching Claude or writing files.
 - It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
 - `BLOCKED.md` stops the loop immediately.
 - If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.
@@ -353,7 +356,7 @@ Purpose: Codex CLI wrapper that executes the next pending H20 plan(s) for one mi
 Syntax:
 
 ```bash
-./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature [--steps N] [--model <model-id>] [--skiphuman]
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature [--steps N] [--model <model-id>] [--skiphuman] [--dry-run]
 ```
 
 Accepted milestone path styles include both `./H20/01-my-feature` and `./01-my-feature`.
@@ -366,6 +369,7 @@ Examples:
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --steps 2
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.4
 ./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --skiphuman
+./H20/Extras/3-autoexec-codex --milestone ./H20/01-my-feature --dry-run
 ```
 
 Behavior:
@@ -378,6 +382,7 @@ Behavior:
 - The wrapper defaults session persistence to `--ephemeral`.
 - The wrapper passes `--skip-git-repo-check` so runs still start when the target repo is outside Codex's trusted-directory list.
 - If `--model gpt-5-codex` is passed, the wrapper rewrites it to `gpt-5.4` before launching Codex because ChatGPT-backed Codex CLI rejects the older alias.
+- `--dry-run` prints the resolved milestone and selected pending plans without launching Codex or writing files.
 - It appends literal executor overlays: `AUTOEXEC_MODE=1`, plus `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used.
 - `BLOCKED.md` stops the loop immediately.
 - If a run returns without creating the expected done-file, the wrapper treats that as a handoff / stop condition instead of blindly continuing.

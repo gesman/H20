@@ -22,6 +22,7 @@ MODEL="opus"
 STREAM=1
 STEP_LIMIT=0
 SKIP_HUMAN=0
+DRY_RUN=0
 
 usage() {
     cat <<EOF
@@ -32,7 +33,7 @@ ${BOLD}Purpose${RESET}
   headlessly in a loop. This uses the current user's Claude subscription login.
 
 ${BOLD}Syntax${RESET}
-  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}sonnet|opus|<full-model>${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--no-stream${RESET}]
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}sonnet|opus|<full-model>${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--no-stream${RESET}] [${YELLOW}--dry-run${RESET}]
   milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
 
 ${BOLD}Parameter defaults${RESET}
@@ -41,16 +42,19 @@ ${BOLD}Parameter defaults${RESET}
   ${YELLOW}--model${RESET}: ${MAGENTA}opus${RESET}
   ${YELLOW}--no-stream${RESET}: omitted by default, so streaming output stays ON
   ${YELLOW}--skiphuman${RESET}: omitted by default, so human-only checks stop and hand off
+  ${YELLOW}--dry-run${RESET}: omitted by default, so live execution runs
 
 ${BOLD}Examples${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--steps${RESET} ${MAGENTA}2${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}opus${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--skiphuman${RESET}
+  ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--dry-run${RESET}
 
 ${BOLD}Behavior${RESET}
   ${GREEN}streaming output is ON by default${RESET}
   ${GREEN}permissions default to --dangerously-skip-permissions${RESET}
+  ${GREEN}--dry-run prints the live-mode milestone and selected plans without launching Claude${RESET}
   ${GREEN}capability requests become implicit skip via AUTOEXEC_MODE=1${RESET}
   ${GREEN}BLOCKED.md stops the loop immediately${RESET}
   ${GREEN}missing done-file after a run is treated as a handoff / stop${RESET}
@@ -128,6 +132,22 @@ next_pending_plan() {
     return 1
 }
 
+selected_pending_plans() {
+    local milestone="$1"
+    local limit="$2"
+    local count=0 plan done
+    while IFS= read -r plan; do
+        done="$(plan_done_file "$plan")" || continue
+        if [[ ! -f "$done" ]]; then
+            printf "%s\n" "$plan"
+            count=$((count + 1))
+            if [[ "$limit" -gt 0 && "$count" -ge "$limit" ]]; then
+                return 0
+            fi
+        fi
+    done < <(find "$milestone" -maxdepth 1 -type f -name 'PLAN-[0-9][0-9]--*.md' ! -name 'PLAN-[0-9][0-9]--DONE.md' | sort)
+}
+
 build_prompt() {
     local plan="$1"
     cat "$EXECUTOR_PROMPT"
@@ -135,6 +155,55 @@ build_prompt() {
     printf "AUTOEXEC_MODE=1\n"
     if [[ "$SKIP_HUMAN" -eq 1 ]]; then
         printf "AUTOEXEC_SKIP_HUMAN=1\n"
+    fi
+}
+
+dry_run_preview() {
+    local count=0 plan done
+
+    echo "${BOLD}${CYAN}Autoexec dry run${RESET}"
+    echo "  agent: claude"
+    echo "  mode: preview only; no agent launch; no files written"
+    echo "  milestone: $MILESTONE"
+    echo "  model: $MODEL"
+    if [[ "$STEP_LIMIT" -eq 0 ]]; then
+        echo "  steps: all pending plans"
+    else
+        echo "  steps: next $STEP_LIMIT plan(s)"
+    fi
+    if [[ "$STREAM" -eq 1 ]]; then
+        echo "  stream: on"
+    else
+        echo "  stream: off"
+    fi
+    if [[ "$SKIP_HUMAN" -eq 1 ]]; then
+        echo "  human checks: force-skip"
+    else
+        echo "  human checks: stop and hand off"
+    fi
+    echo "  permissions: dangerously-skip-permissions"
+
+    if [[ -f "$BLOCKED_FILE" ]]; then
+        warn ""
+        warn "${BOLD}BLOCKED.md exists${RESET}${YELLOW} — live mode would stop before any autoexec run${RESET}"
+        printf "  %s\n" "$BLOCKED_FILE"
+        return 0
+    fi
+
+    echo ""
+    echo "${BOLD}${MAGENTA}Plans live mode would attempt${RESET}"
+    while IFS= read -r plan; do
+        done="$(plan_done_file "$plan")" || fail "Could not derive done-file for plan: $plan"
+        count=$((count + 1))
+        printf "  %s. plan: %s\n" "$count" "$plan"
+        printf "     expected done-file: %s\n" "$done"
+    done < <(selected_pending_plans "$MILESTONE" "$STEP_LIMIT")
+
+    if [[ "$count" -eq 0 ]]; then
+        echo "  none"
+    else
+        echo ""
+        echo "  live mode still stops early if a plan exits unsuccessfully, writes BLOCKED.md, or returns without the expected done-file."
     fi
 }
 
@@ -187,6 +256,10 @@ while [[ "$#" -gt 0 ]]; do
             SKIP_HUMAN=1
             shift
             ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
         -h|--help)
             usage
             exit 0
@@ -202,13 +275,19 @@ done
     exit 0
 }
 
-require_command claude
 require_command python3
 
 MILESTONE="$(resolve_milestone_path "$MILESTONE")" || fail "Milestone directory not found: $MILESTONE"
 [[ -f "$EXECUTOR_PROMPT" ]] || fail "Executor prompt not found: $EXECUTOR_PROMPT"
 
 BLOCKED_FILE="$MILESTONE/BLOCKED.md"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+    dry_run_preview
+    exit 0
+fi
+
+require_command claude
+
 if [[ -f "$BLOCKED_FILE" ]]; then
     warn "${BOLD}BLOCKED.md already exists${RESET}${YELLOW} — stopping before any autoexec run${RESET}"
     printf "  %s\n" "$BLOCKED_FILE"
