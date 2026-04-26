@@ -18,7 +18,7 @@ DIM=$'\033[2m'
 RESET=$'\033[0m'
 
 MILESTONE=""
-MODEL="sonnet"
+MODEL="opus"
 STREAM=1
 STEP_LIMIT=0
 SKIP_HUMAN=0
@@ -34,6 +34,13 @@ ${BOLD}Purpose${RESET}
 ${BOLD}Syntax${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}sonnet|opus|<full-model>${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--no-stream${RESET}]
   milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
+
+${BOLD}Parameter defaults${RESET}
+  ${YELLOW}--milestone${RESET}: required; no default
+  ${YELLOW}--steps${RESET}: run all pending plans
+  ${YELLOW}--model${RESET}: ${MAGENTA}opus${RESET}
+  ${YELLOW}--no-stream${RESET}: omitted by default, so streaming output stays ON
+  ${YELLOW}--skiphuman${RESET}: omitted by default, so human-only checks stop and hand off
 
 ${BOLD}Examples${RESET}
   ${GREEN}./H20/Extras/3-autoexec-claude${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}

@@ -34,8 +34,13 @@ ${BOLD}Purpose${RESET}
 ${BOLD}Syntax${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}<model-id>${RESET}] [${YELLOW}--skiphuman${RESET}]
   milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
-  if ${YELLOW}--model${RESET} is omitted, the wrapper defers to your local Codex CLI default
-  the current tested explicit model is ${MAGENTA}gpt-5.4${RESET}
+
+${BOLD}Parameter defaults${RESET}
+  ${YELLOW}--milestone${RESET}: required; no default
+  ${YELLOW}--steps${RESET}: run all pending plans
+  ${YELLOW}--model${RESET}: use your local Codex CLI default
+  ${YELLOW}--skiphuman${RESET}: omitted by default, so human-only checks stop and hand off
+  current tested explicit model: ${MAGENTA}gpt-5.4${RESET}
 
 ${BOLD}Examples${RESET}
   ${GREEN}./H20/Extras/3-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
