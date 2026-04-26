@@ -128,6 +128,8 @@ Stop and wait. When the user replies, capture decisions. If the user says "you p
 
 After research (or skip), scan for remaining ambiguity across the full raw input corpus: goal, user type, scale/performance, success criteria, non-goals, constraints the user has not said aloud, anything research did not cover, and any contradictions between sources.
 
+Treat requests to "test", "verify", "walk through", "click through", "check live", or do a "manual visual check" as requests for agent-operated verification by default. Do not offer or recommend a manual visual check, user walkthrough, `approved` gate, or `skip` gate for normal UI/API behavior when objective checks can judge it. Prefer commands, automated browser flows, API calls, screenshots, DOM checks, logs, or equivalent agent-runnable checks. Mark verification human-only only when the raw corpus explicitly asks for human UAT or subjective review, or when no reasonable agent-side tool or fallback can judge the result; record that reason in the good prompt.
+
 Print:
 
 ```

@@ -77,7 +77,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - `## Goal` — one paragraph describing the outcome.
 - `## Steps` — numbered list; each step small, specific, verifiable.
 - `## Deliverables` — files created or modified, with relative paths.
-- `## Verification` — concrete commands or checks the executor must run. Prefer agent-runnable checks: commands, automated flows, API calls, screenshots, DOM checks, logs, or equivalent objective checks. Mark verification human-only only when no reasonable agent-side tool or fallback can judge it.
+- `## Verification` — concrete commands or checks the executor must run. Prefer agent-runnable checks: commands, automated flows, API calls, screenshots, DOM checks, logs, or equivalent objective checks. Do not use manual visual check or user walkthrough language for objective behavior unless no reasonable agent-side tool or fallback can judge it. Mark verification human-only only with that reason.
 - `## Done signal` — literal instruction to write `PLAN-NN--DONE.md` on full pass and commit if in a git repo.
 
 ### PLAN-NN--DONE.md schema
