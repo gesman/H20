@@ -1,46 +1,19 @@
 # 4-review
 
-This is a non-core review-stage prompt for H20. Paste the contents of this file into a coding agent with filesystem access, then provide:
+Agent-only instruction file for H20 review stage. Use it to review exactly one completed milestone or one completed `PLAN-NN--<kebab>.md`, then write immutable review artifacts under `./H20/Reviews/`.
 
-- exactly one completed milestone directory such as `./H20/05-my-milestone/`; or exactly one completed plan file such as `./H20/05-my-milestone/PLAN-03--api-hardening.md`; and
-- optionally, any number of seeded review concerns supplied as pasted text and/or referenced files.
-
-Important invocation note:
-
-- If your coding agent supports file references, use `@H20/Extras/4-review.md`, not a bare path like `H20/Extras/4-review.md`.
-- If file references are unavailable, paste the contents of this file first, then paste the target milestone or plan path after it, followed by any optional review concerns.
-
-This helper is intentionally outside core H20. It does **not** modify existing milestones, does **not** change `PLAN-NN--DONE.md` semantics, and does **not** create a second completion state. Its only job is to write immutable review artifacts under `./H20/Reviews/`.
-
-Minimal invocation for coding agents that support file references:
-
-`@H20/Extras/4-review.md @H20/05-my-milestone/`
-
-Also supported:
-
-- `@H20/Extras/4-review.md @H20/05-my-milestone/PLAN-03--api-hardening.md`
-- `@H20/Extras/4-review.md @05-my-milestone`
-- `@H20/Extras/4-review.md @H20/05-my-milestone/ "Also inspect whether /config.yaml could be world-accessible."`
-- `@H20/Extras/4-review.md @H20/05-my-milestone/ @other-concerns.txt`
-- `@H20/Extras/4-review.md @H20/05-my-milestone/ @other-concerns.txt "Pay extra attention to auth bypass and public config exposure."`
-
-If you were invoked by file references instead of pasted text, use this contract:
+## Invocation contract
 
 - Treat this file as the instruction set.
-- Treat everything after this file as review control input.
-- Resolve exactly one milestone dir or exactly one plan file as the review target.
-- Treat everything else after the target as optional seeded review concerns.
+- Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as review control input.
+- If exactly one completed milestone directory is present, review that milestone.
+- If exactly one completed `PLAN-NN--*.md` file is present, review that completed plan.
+- If both a milestone directory and a plan file are present and they point to the same milestone, STOP and ask the user whether to review the full milestone or only the plan.
+- If multiple candidate milestone directories or multiple candidate plan files are present, STOP and ask the user which one to review.
+- If no review target is present, STOP and ask for a completed milestone directory or completed plan file.
+- Treat everything else after the review target as optional seeded review concerns.
 - Seeded concerns may be pasted free text, one or more referenced text files, or both.
-- If multiple milestone / plan targets are present, STOP and ask the user which one to review.
-- If no target is present, STOP and ask for one.
-
-If you were invoked by pasted prompt text instead of file references, use this contract:
-
-- Treat this file as the instruction set.
-- Treat the material supplied after this file as review control input.
-- Resolve exactly one milestone dir or exactly one plan file as the review target.
-- Treat everything else after the target as optional seeded review concerns.
-- If no milestone or plan target is present in that control input, STOP and ask for one.
+- The review control input is review-stage input only. Do not execute implementation work, modify milestone state, or create a second completion marker.
 
 ---
 
