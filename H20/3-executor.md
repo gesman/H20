@@ -116,7 +116,7 @@ Rules of thumb:
 
 Execute every check in the plan's `## Verification` section, plus any tests you added in Step 4. Record each result as `✅ <command/check>`, `❌ <command/check>`, or `⚠ skipped <check>`.
 
-If a verification item needs human judgment (UI, browser flow, visual output, interactive behavior, external-login flow, or "does this feel right?"), first do every automatable setup step yourself: start the server, seed data, print the URL, and give exact verification steps. Then STOP and wait for the user to reply:
+First try to execute each verification item yourself with available tools and safe fallbacks. UI checks, browser flows, visual output, and interactive behavior are not human-only by default; automate them where possible with browser tooling, screenshots, DOM checks, HTTP calls, logs, or equivalent objective checks. Treat an item as human-only only when it requires subjective human judgment, an unavoidable external auth / approval gate, an unavailable physical facility, or another check no available tool or fallback can reasonably perform. For a human-only item, first do every automatable setup step yourself: start the server, seed data, print the URL, and give exact verification steps. Then STOP and wait for the user to reply:
 
 - `approved` — the human-only check passes.
 - `skip` — the human-only check is explicitly waived.

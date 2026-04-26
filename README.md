@@ -167,7 +167,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 - `## Goal` — one paragraph; what this plan achieves end-to-end.
 - `## Steps` — numbered list; each step small, specific, verifiable.
 - `## Deliverables` — files created or modified, with relative paths.
-- `## Verification` — concrete commands/checks the executor must run (e.g. `pytest tests/test_feature.py`, or "open http://localhost:3000 and confirm the dashboard loads"). If a verification item needs human judgment, the executor must do the setup first (start server, seed data, print URL/steps), then stop for `approved` or `skip`.
+- `## Verification` — concrete commands/checks the executor must run (e.g. `pytest tests/test_feature.py`, or "open http://localhost:3000 and confirm the dashboard loads"). Prefer agent-runnable checks: commands, automated flows, API calls, screenshots, DOM checks, logs, or equivalent objective checks. Mark verification human-only only when no reasonable agent-side tool or fallback can judge it; then the executor must do the setup first (start server, seed data, print URL/steps), then stop for `approved` or `skip`.
 - `## Done signal` — literal: "On full verification pass, write `PLAN-NN--DONE.md` in this directory per the README done-file schema, then commit if in a git repo."
 
 ### PLAN-NN--DONE.md schema
