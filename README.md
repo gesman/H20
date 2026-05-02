@@ -287,6 +287,7 @@ Behavior:
 
 - With a milestone dir, it reviews the union of files recorded by completed done-files in that milestone.
 - With a completed plan file, it reviews that plan's recorded outputs only, while still writing artifacts under the parent milestone's review directory.
+- Done-files define review scope, but are not correctness evidence. Findings and clearances come from inspected artifacts, concrete recorded verification, or fresh read-only checks when available.
 - It accepts optional seeded concerns after the target as pasted text and/or referenced files. These are review hints, not scope redefinition.
 - It writes the next free immutable pair:
   - `./H20/Reviews/05-my-milestone/REVIEW-01.md`

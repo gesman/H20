@@ -51,6 +51,7 @@ Notes:
   - `@H20/Extras/4-review.md @H20/05-my-milestone/ @other-concerns.txt`
 - do not use a bare path like `H20/Extras/4-review.md` and expect the agent to load it; use `@...` or paste the file contents
 - accepted use case: independent review of completed milestone outputs or one completed plan's outputs
+- done-files define review scope, but findings and clearances must come from inspected artifacts, concrete recorded verification, or fresh read-only checks when available
 - seeded concerns are review hints only; they do not redefine review scope
 - output: immutable review artifact pairs under `./H20/Reviews/<milestone>/`, such as `REVIEW-01.md` and `raw-review-prompt-01.md`
 - repeated runs by different agents create `REVIEW-02.md`, `raw-review-prompt-02.md`, and so on; earlier review artifacts are never overwritten

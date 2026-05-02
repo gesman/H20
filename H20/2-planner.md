@@ -58,6 +58,8 @@ These are rules, not guidance. Follow them.
 
 ## Output contract
 
+Before writing files, run a compact self-review of the plan set: no placeholders or `TBD`, every requirement and success criterion covered, every plan has at most one prerequisite, each verification is agent-runnable or explicitly human-only with a reason, and no plan is only setup or future work. Fix issues inline; ask only when `good-prompt.md` cannot resolve them.
+
 Write two kinds of files into the milestone directory.
 
 ### Plan files

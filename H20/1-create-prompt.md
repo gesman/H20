@@ -150,6 +150,8 @@ Stop. Do not invent answers. After receiving replies, if still ambiguous, run on
 
 ## Phase 5 — Writing
 
+Before writing, do a compact self-review of the artifact draft: schema sections present or omitted correctly, no placeholders or contradictions, every requirement testable, success criteria verifiable, and any human-only verification reason explicit. Fix the draft; if a material ambiguity remains, ask instead of writing around it.
+
 1. **Pick NN.** List `./H20/` and find existing `NN-<kebab>/` directories. Choose `max(NN) + 1`, or `01` if none exist.
 2. **Derive kebab title** from the agreed goal — verbs-and-nouns, no filler (`wordcount-cli`, not `project-1`).
 3. **Create** `./H20/NN-<kebab>/`.

@@ -102,6 +102,8 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Plans and the
 
 These artifacts are produced only by non-core helpers such as `./H20/Extras/4-review.md`. They live under `./H20/Reviews/` and do not change milestone completion semantics, done-file recovery, or executor behavior.
 
+Done-files may define review scope, but they are not correctness evidence. Review findings and clearances must be backed by inspected artifacts, concrete recorded verification, or fresh read-only checks when available.
+
 ### REVIEW-NN.md schema
 
 - `# Review NN: <reviewed milestone title>`

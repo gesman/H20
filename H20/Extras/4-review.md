@@ -105,6 +105,8 @@ Perform an implementation-first review of the scoped outputs.
 
 Treat the reviewed code, schemas, tests, configs, migrations, interfaces, and logic as if they arrived for review with no backstory. At this stage:
 
+- do **not** trust done-file summaries, executor claims, or test names as correctness evidence by themselves;
+- back every finding or clearance with inspected artifacts, concrete recorded verification, or fresh read-only checks when available;
 - do **not** justify defects because the plan may have allowed them;
 - do **not** ask whether the implementation merely matched the plan;
 - do **not** rewrite code or fix anything;

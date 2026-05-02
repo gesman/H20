@@ -123,13 +123,13 @@ First try to execute each verification item yourself with available tools and sa
 
 If `AUTOEXEC_MODE=1` is present and `AUTOEXEC_SKIP_HUMAN=1` is absent, still stop after setup and hand off exactly as above. If both `AUTOEXEC_MODE=1` and `AUTOEXEC_SKIP_HUMAN=1` are present, do the full automatable setup, record the human-only item as `⚠ skipped <check>`, mention the forced skip in the done-file summary, and continue. Never auto-skip human verification without the explicit `AUTOEXEC_SKIP_HUMAN=1` marker.
 
-Do not write the done-file until every human-only verification item is either `approved` or `skip`. If the user skips, record that clearly as `⚠ skipped` in the verification results and mention it in the done-file summary. If a check fails, first state the most likely falsifiable cause in one sentence and check it against the observed failure. If the fix is clearly within the plan's scope, apply the minimal change and rerun the failed checks. If the failure reveals plan ambiguity, missing prerequisites, or out-of-scope work, STOP. Do not write a done-file for a partial pass.
+Do not write the done-file until every human-only verification item is either `approved` or `skip`. If the user skips, record that clearly as `⚠ skipped` in the verification results and mention it in the done-file summary. If a check fails, do a compact root-cause pass before editing: read the full output and exit code, reproduce once when cheap, tie the failure to the smallest changed surface, state one falsifiable hypothesis, then apply one minimal in-scope fix and rerun the failed check plus related tests. If the root cause remains unclear, a second distinct hypothesis fails, or the fix would exceed the plan, STOP. If the failure reveals a durable blocker, write `BLOCKED.md`; if it reveals plan ambiguity, missing prerequisites, or out-of-scope work, STOP. Do not write a done-file for a partial pass.
 
 ---
 
 ## Step 6. Write the done-file
 
-Only on full verification pass. Write `PLAN-NN--DONE.md` in the same directory as the plan file, conforming to the README `PLAN-NN--DONE.md schema`. Include in `## Summary`:
+Only on full verification pass, backed by fresh Step 5 evidence. Write `PLAN-NN--DONE.md` in the same directory as the plan file, conforming to the README `PLAN-NN--DONE.md schema`. Include in `## Summary`:
 
 - A bullet noting capability usage or blocker outcome (`used`, `best-effort fallback`, `blocked`, or `not needed`).
 - A bullet naming test files added during execution (or "no tests applicable").
@@ -186,6 +186,7 @@ If this was the last plan, say so explicitly and still recommend clearing contex
 - Never mark a human-only verification item as passed unless the user said `approved`. `skip` is a waiver, not a pass — record it honestly.
 - Never use `BLOCKED.md` as a substitute for the normal user pauses already defined in this prompt.
 - Never keep rolling from one H20 stage or plan into the next with a bloated context window. Recommend a context reset at each handoff.
+- Never claim completion from expectation, stale verification, or tool optimism. Completion claims must rest on the current run's verification results and written done-file.
 
 ---
 
