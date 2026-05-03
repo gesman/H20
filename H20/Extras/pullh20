@@ -14,7 +14,7 @@ if [[ $# -gt 1 ]]; then
     exit 1
 fi
 
-declare -a RSYNC_EXCLUDES=()
+declare -a RSYNC_EXCLUDES=(--exclude="__pycache__/" --exclude="*.pyc")
 declare -a PRESERVED_DIR_NAMES=()
 declare -a STATIC_PRESERVE_IF_PRESENT=("RawPrompts" "Reviews")
 
@@ -45,6 +45,16 @@ path_is_preserved() {
             return 0
         fi
     done
+
+    return 1
+}
+
+path_is_generated_cache() {
+    local rel_path="$1"
+
+    if [[ "${rel_path}" == *__pycache__/* || "${rel_path}" == *.pyc ]]; then
+        return 0
+    fi
 
     return 1
 }
@@ -129,6 +139,9 @@ report_sync_results() {
 
     while IFS= read -r rel_path || [[ -n "${rel_path}" ]]; do
         [[ -n "${rel_path}" ]] || continue
+        if path_is_generated_cache "${rel_path}"; then
+            continue
+        fi
         if path_is_preserved "${rel_path}"; then
             continue
         fi
