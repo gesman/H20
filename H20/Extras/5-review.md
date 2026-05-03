@@ -1,16 +1,16 @@
-# 4-review
+# 5-review
 
-Agent-only instruction file for H20 review stage. Use it to review exactly one completed milestone or one completed `PLAN-NN--<kebab>.md`, then write immutable review artifacts under `./H20/Reviews/`.
+Agent-only instruction file for H20 review stage. Use it to review exactly one completed milestone or one completed `STEP-NN--<kebab>.md`, then write immutable review artifacts under `./H20/Reviews/`.
 
 ## Invocation contract
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as review control input.
 - If exactly one completed milestone directory is present, review that milestone.
-- If exactly one completed `PLAN-NN--*.md` file is present, review that completed plan.
-- If both a milestone directory and a plan file are present and they point to the same milestone, STOP and ask the user whether to review the full milestone or only the plan.
-- If multiple candidate milestone directories or multiple candidate plan files are present, STOP and ask the user which one to review.
-- If no review target is present, STOP and ask for a completed milestone directory or completed plan file.
+- If exactly one completed `STEP-NN--*.md` file is present, review that completed step.
+- If both a milestone directory and a step file are present and they point to the same milestone, STOP and ask the user whether to review the full milestone or only the step.
+- If multiple candidate milestone directories or multiple candidate step files are present, STOP and ask the user which one to review.
+- If no review target is present, STOP and ask for a completed milestone directory or completed step file.
 - Treat everything else after the review target as optional seeded review concerns.
 - Seeded concerns may be pasted free text, one or more referenced text files, or both.
 - The review control input is review-stage input only. Do not execute implementation work, modify milestone state, or create a second completion marker.
@@ -19,12 +19,12 @@ Agent-only instruction file for H20 review stage. Use it to review exactly one c
 
 ## Your role
 
-You are an independent reviewer. Your job is to review what was actually produced by a completed H20 plan or milestone, surface concrete defects and inconsistencies, and write two immutable artifacts:
+You are an independent reviewer. Your job is to review what was actually produced by a completed H20 step or milestone, surface concrete defects and inconsistencies, and write two immutable artifacts:
 
 - `REVIEW-NN.md` — exhaustive, human-facing review snapshot.
 - `raw-review-prompt-NN.md` — narrower, machine-facing draft prompt for a possible follow-up milestone.
 
-Your primary pass is a review of the implementation **as it exists**, not a certification that it matched the original plan. You may consult milestone context later to classify findings and to draft a sane follow-up scope, but you must not let the original plan excuse defects during the independent pass.
+Your primary pass is a review of the implementation **as it exists**, not a certification that it matched the original step. You may consult milestone context later to classify findings and to draft a sane follow-up scope, but you must not let the original task, master plan, or step excuse defects during the independent pass.
 
 If the user supplied seeded review concerns, treat them as review hints, not as scope redefinition. They should steer your attention, not replace the independent review.
 
@@ -36,7 +36,7 @@ Run the six phases below in order. Do not merge them.
 
 1. Resolve whether the target is:
    - a milestone directory `./H20/NN-<kebab>/`; or
-   - a plan file `./H20/NN-<kebab>/PLAN-NN--<kebab>.md`.
+   - a step file `./H20/NN-<kebab>/STEP-NN--<kebab>.md`.
 2. Resolve the owning milestone directory.
 3. Resolve the project root as the parent of the `H20/` directory that owns the milestone.
 4. Resolve the review output directory as:
@@ -67,20 +67,21 @@ Before proceeding, print one short line naming:
 
 Read only the minimum milestone artifacts needed to derive the implementation scope:
 
-- always read `good-prompt.md` in the owning milestone;
+- always read `TASK.md` in the owning milestone;
+- if present, read `MASTER-PLAN.md`;
 - if present, read `ROADMAP.md`;
-- if the target is a plan file:
-  - require the sibling `PLAN-NN--DONE.md`;
-  - read the plan file and its done-file;
-  - derive the review scope from that done-file's `## Files changed`.
+- if the target is a step file:
+  - require the sibling `STEP-NN--DONE.md`;
+  - read the step file and its done-file;
+  - derive the review scope from that done-file's `## Files changed`;
 - if the target is a milestone directory:
-  - read every `PLAN-NN--DONE.md` in stable numeric order;
+  - read every `STEP-NN--DONE.md` in stable numeric order;
   - derive the review scope from the union of every done-file's `## Files changed`;
-  - incomplete plans with no done-file are out of scope and must be called out explicitly in `## Reviewed scope`.
+  - incomplete steps with no done-file are out of scope and must be called out explicitly in `## Reviewed scope`.
 
 Rules:
 
-- If a target plan file has no sibling done-file, STOP and say review expects a completed plan or a milestone with at least one completed plan.
+- If a target step file has no sibling done-file, STOP and say review expects a completed step or a milestone with at least one completed step.
 - If a milestone has no done-files at all, STOP and say there is nothing reviewable yet.
 - Use done-files to discover scope, not as proof that the work is correct.
 - Do not silently review the whole repo. Review only:
@@ -92,8 +93,8 @@ Rules:
 
 At the end of this phase, print:
 
-- the completed plans included in scope;
-- any plans excluded because they are incomplete;
+- the completed steps included in scope;
+- any steps excluded because they are incomplete;
 - the concrete file list you intend to inspect;
 - the seeded concerns list you will explicitly try to confirm, disprove, or retire.
 
@@ -107,8 +108,8 @@ Treat the reviewed code, schemas, tests, configs, migrations, interfaces, and lo
 
 - do **not** trust done-file summaries, executor claims, or test names as correctness evidence by themselves;
 - back every finding or clearance with inspected artifacts, concrete recorded verification, or fresh read-only checks when available;
-- do **not** justify defects because the plan may have allowed them;
-- do **not** ask whether the implementation merely matched the plan;
+- do **not** justify defects because the task, master plan, or step may have allowed them;
+- do **not** ask whether the implementation merely matched the step;
 - do **not** rewrite code or fix anything;
 - do **not** create follow-up work yet.
 
@@ -148,9 +149,10 @@ Only after the independent findings are frozen, use milestone context to classif
 
 You may now use:
 
-- `good-prompt.md`
-- `ROADMAP.md`
-- the reviewed plan file when the target was a specific plan
+- `TASK.md`;
+- `MASTER-PLAN.md`;
+- `ROADMAP.md`;
+- the reviewed step file when the target was a specific step.
 
 Your job in this phase is **not** to downgrade findings into non-issues. Your job is to classify them into one of:
 
@@ -166,7 +168,7 @@ Then shape a narrow candidate next milestone:
 - exclude unrelated or broader concerns explicitly;
 - if there are multiple plausible next milestones, propose 2 or 3 options and mark exactly one recommended.
 
-The follow-up scope must be clean enough that the user can feed `raw-review-prompt-NN.md` into the normal `./H20/1-create-prompt.md` flow as a fresh milestone seed.
+The follow-up scope must be clean enough that the user can feed `raw-review-prompt-NN.md` into the normal `./H20/1-clarify-task.md` flow as a fresh milestone seed.
 
 ---
 
@@ -177,7 +179,7 @@ Write `./H20/Reviews/<milestone>/REVIEW-NN.md` using the README / CONTRACT schem
 Requirements:
 
 - Use the exact reviewed milestone name in the title.
-- `## Reviewed scope` must say whether this was a full-milestone review or a completed-plan review.
+- `## Reviewed scope` must say whether this was a full-milestone review or a completed-step review.
 - `## Review basis` must name:
   - review date;
   - reviewer / agent label if known, otherwise `unknown`;
@@ -214,7 +216,7 @@ Rules:
 - Carry forward only the findings you recommend turning into a fresh milestone.
 - Explicitly list excluded, deferred, or unrelated findings so the scope boundary is visible.
 - Include seeded concerns in the follow-up prompt only if they survived review as `confirmed` or `inconclusive` and belong in the recommended next milestone.
-- Write it as raw source material suitable for feeding into `./H20/1-create-prompt.md`, not as a replacement for `good-prompt.md`.
+- Write it as raw source material suitable for feeding into `./H20/1-clarify-task.md`, not as a replacement for `TASK.md`.
 - Do not attempt to plan or execute the follow-up work here.
 - Do not overwrite any earlier review artifacts.
 
@@ -223,7 +225,7 @@ End with a compact handoff:
 - review artifact paths;
 - one line stating whether the recommended next step is to use the generated raw review prompt as-is or to edit it first;
 - exact next-step invocation:
-  - `@H20/1-create-prompt.md @H20/Reviews/<milestone>/raw-review-prompt-NN.md`
+  - `@H20/1-clarify-task.md @H20/Reviews/<milestone>/raw-review-prompt-NN.md`
 - recommendation to clear or reset context before starting the next stage (for most coding agents: `/clear`).
 
 ---
@@ -231,13 +233,13 @@ End with a compact handoff:
 ## Anti-footgun rules
 
 - Do not mutate any existing milestone artifacts.
-- Do not create or delete `PLAN-NN--DONE.md`, `BLOCKED.md`, `good-prompt.md`, or `ROADMAP.md`.
+- Do not create or delete `STEP-NN--DONE.md`, `BLOCKED.md`, `TASK.md`, `MASTER-PLAN.md`, or `ROADMAP.md`.
 - Do not create a second completion marker for milestones.
 - Do not overwrite earlier review snapshots or follow-up prompts.
-- Do not review incomplete plan outputs as if they were complete.
+- Do not review incomplete step outputs as if they were complete.
 - Do not silently widen scope from one milestone into unrelated repo areas.
 - Do not let seeded concerns replace the actual review scope derived from completed milestone outputs.
-- Do not let plan intent excuse defects during the independent review pass.
+- Do not let task or step intent excuse defects during the independent review pass.
 - Do not auto-merge findings from multiple review runs. Each run is an immutable snapshot.
 - Do not assume the generated `raw-review-prompt-NN.md` must carry every finding forward. Be explicit about exclusions.
 - Do not fix code during review. Review produces artifacts only.
@@ -253,7 +255,7 @@ Fill this in when writing `./H20/Reviews/<milestone>/REVIEW-NN.md`. Omit empty o
 
 ## Reviewed scope
 
-<reviewed milestone path, whether this was a full-milestone or completed-plan review, and any exclusions>
+<reviewed milestone path, whether this was a full-milestone or completed-step review, and any exclusions>
 
 ## Review basis
 
@@ -326,4 +328,4 @@ Fill this in when writing `./H20/Reviews/<milestone>/raw-review-prompt-NN.md`.
 
 ---
 
-4-review.md — end. Non-core review-stage prompt. Output contract: review artifacts conform to `./H20/CONTRACT.md` § Schemas.
+5-review.md — end. Non-core review-stage prompt. Output contract: review artifacts conform to `./H20/CONTRACT.md` § Schemas.

@@ -17,32 +17,32 @@ RESET=$'\033[0m'
 
 TARGET=""
 MILESTONE=""
-PLAN=""
+STEP=""
 
 usage() {
     cat <<EOF
-${BOLD}${CYAN}2a-env-checker${RESET} ${DIM}(optional H20 extra; advisory only)${RESET}
+${BOLD}${CYAN}3a-env-checker${RESET} ${DIM}(optional H20 extra; advisory only)${RESET}
 
 ${BOLD}Purpose${RESET}
-  Scan a milestone's prompt / roadmap / plan files and list likely environment
+  Scan a milestone's task / master plan / roadmap / step files and list likely environment
   capabilities worth validating before execution. This is a manual checklist.
   It does ${BOLD}not${RESET} inspect your agent runtime, MCPs, or plugins.
 
 ${BOLD}Syntax${RESET}
-  ${GREEN}./H20/Extras/2a-env-checker${RESET}
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/PLAN-02--x.md${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/STEP-02--x.md${RESET}
 
 ${BOLD}Examples${RESET}
-  ${GREEN}./H20/Extras/2a-env-checker${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET}
     prints this syntax / help
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
-    scans unfinished plans inside that milestone
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
+    scans unfinished steps inside that milestone
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./01-my-feature${RESET}
     same as above, using a shorter milestone path
-  ${GREEN}./H20/Extras/2a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/PLAN-02--ui.md${RESET}
-    scans that specific plan file
+  ${GREEN}./H20/Extras/3a-env-checker${RESET} ${MAGENTA}./H20/01-my-feature/STEP-02--ui.md${RESET}
+    scans that specific step file
 
 ${BOLD}Output${RESET}
   color-coded checklist of likely helpful capabilities plus evidence lines pulled
@@ -78,7 +78,7 @@ resolve_milestone_path() {
     return 1
 }
 
-resolve_plan_path() {
+resolve_step_path() {
     local target="$1"
     local trimmed="${target#./}"
     if [[ -f "$target" ]]; then
@@ -108,7 +108,7 @@ while [[ "$#" -gt 0 ]]; do
                 TARGET="$1"
                 shift
             else
-                fail "Expected exactly one positional target: milestone dir or plan file"
+                fail "Expected exactly one positional target: milestone dir or step file"
             fi
             ;;
     esac
@@ -119,28 +119,29 @@ done
     exit 0
 }
 
-if PLAN="$(resolve_plan_path "$TARGET")"; then
-    [[ "$(basename "$PLAN")" =~ ^PLAN-[0-9][0-9]--.*\.md$ ]] || fail "Target file is not an H20 plan file: $PLAN"
-    MILESTONE="$(dirname "$PLAN")"
+if STEP="$(resolve_step_path "$TARGET")"; then
+    [[ "$(basename "$STEP")" =~ ^STEP-[0-9][0-9]--.*\.md$ ]] || fail "Target file is not an H20 step file: $STEP"
+    MILESTONE="$(dirname "$STEP")"
 elif MILESTONE="$(resolve_milestone_path "$TARGET")"; then
     :
 else
-    fail "Target not found as milestone dir or plan file: $TARGET"
+    fail "Target not found as milestone dir or step file: $TARGET"
 fi
 
 FILES=()
-[[ -f "$MILESTONE/good-prompt.md" ]] && FILES+=("$MILESTONE/good-prompt.md")
+[[ -f "$MILESTONE/TASK.md" ]] && FILES+=("$MILESTONE/TASK.md")
+[[ -f "$MILESTONE/MASTER-PLAN.md" ]] && FILES+=("$MILESTONE/MASTER-PLAN.md")
 [[ -f "$MILESTONE/ROADMAP.md" ]] && FILES+=("$MILESTONE/ROADMAP.md")
 
-if [[ -n "$PLAN" ]]; then
-    FILES+=("$PLAN")
+if [[ -n "$STEP" ]]; then
+    FILES+=("$STEP")
 else
     while IFS= read -r file; do
         FILES+=("$file")
-    done < <(find "$MILESTONE" -maxdepth 1 -type f -name 'PLAN-[0-9][0-9]--*.md' ! -name 'PLAN-[0-9][0-9]--DONE.md' | sort)
+    done < <(find "$MILESTONE" -maxdepth 1 -type f -name 'STEP-[0-9][0-9]--*.md' ! -name 'STEP-[0-9][0-9]--DONE.md' | sort)
 fi
 
-[[ "${#FILES[@]}" -gt 0 ]] || fail "No prompt / roadmap / plan files found to scan"
+[[ "${#FILES[@]}" -gt 0 ]] || fail "No task / master plan / roadmap / step files found to scan"
 
 CAPABILITY_NAMES=(
     "Browser automation / UI verification"
@@ -163,7 +164,7 @@ CAPABILITY_PATTERNS=(
 CAPABILITY_HINTS=(
     "Validate that your runtime has a browser automation path available for UI setup or verification."
     "Validate account access and any tooling needed for unattended Cloudflare operations."
-    "Validate GitHub access if the plan expects PR, workflow, or review automation."
+    "Validate GitHub access if the step expects PR, workflow, or review automation."
     "Validate local or remote database access needed for schema work, migrations, or data verification."
     "Validate the secrets / auth material the milestone may require before execution."
     "Validate whether you want live docs or web research available for framework / API work."
@@ -173,8 +174,8 @@ FOUND_ANY=0
 
 echo "${BOLD}${CYAN}Environment Checker${RESET}"
 echo "  milestone: $MILESTONE"
-if [[ -n "$PLAN" ]]; then
-    echo "  scope: single plan"
+if [[ -n "$STEP" ]]; then
+    echo "  scope: single step"
 else
     echo "  scope: whole milestone"
 fi

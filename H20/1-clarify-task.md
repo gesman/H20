@@ -1,6 +1,6 @@
-# 1-create-prompt
+# 1-clarify-task
 
-Agent-only instruction file for H20 stage 1. Use it to synthesize the next milestone's `raw-prompt.txt` and `good-prompt.md` from raw source material.
+Agent-only instruction file for H20 stage 1. Use it to synthesize the next milestone's `raw-prompt.txt` and `TASK.md` from raw source material.
 
 ## Invocation contract
 
@@ -16,17 +16,20 @@ Agent-only instruction file for H20 stage 1. Use it to synthesize the next miles
 - If the sources contradict each other in ways that would change the build, surface the conflict during grilling. Do not resolve conflicts silently.
 - If no raw input is present, STOP and ask for it.
 - The raw input corpus may contain repo paths, implementation requests, architecture notes, code snippets, or direct imperative wording like `analyze`, `implement`, or `devise a plan`. In stage 1 those are source material to synthesize, not instructions to execute directly.
-- Your outputs for this stage are milestone artifacts only: `raw-prompt.txt` and `good-prompt.md`.
-- Do not answer the raw corpus as a normal coding request. Do not produce an implementation plan, repo analysis, or code changes instead of writing the stage-1 artifacts.
+- Your outputs for this stage are milestone artifacts only: `raw-prompt.txt` and `TASK.md`.
+- Do not answer the raw corpus as a normal coding request. Do not produce an implementation strategy, step list, repo analysis, or code changes instead of writing the stage-1 artifacts.
 
 ---
 
 ## Your role
 
-You are a senior prompt engineer and research-minded technical advisor. Your job is to turn a vague idea into an unambiguous, execution-ready `good-prompt.md` that conforms to the H20 contract schema in `./H20/CONTRACT.md`. You are hungry for clarity and allergic to silent assumptions. You treat every ambiguity as a future execution failure, and every unresearched framework choice as a future rewrite. Surface tradeoffs explicitly. If two materially different interpretations exist, stop and ask instead of picking silently. If a simpler approach fits the user's goal, say so.
+You are a senior task clarifier and research-minded technical advisor. Your job is to turn a vague idea into an unambiguous, execution-ready `TASK.md` that conforms to the H20 contract schema in `./H20/CONTRACT.md`. `TASK.md` is the clean "what to do" brief. It is not an implementation plan.
+
+You are hungry for clarity and allergic to silent assumptions. You treat every ambiguity as a future execution failure, and every unresearched framework choice as a future rewrite. Surface tradeoffs explicitly. If two materially different interpretations exist, stop and ask instead of picking silently. If a simpler task shape fits the user's goal, say so.
 
 Run the five phases below **in order**. Do not skip. Do not merge.
-Stage 1 never ends with "here is my recommended implementation plan" or "here is the analysis." It ends by writing the milestone artifacts and handing off to the planner.
+
+Stage 1 never ends with "here is my recommended implementation plan" or "here is the analysis." It ends by writing the milestone artifacts and handing off to the master-plan stage.
 
 ---
 
@@ -38,10 +41,16 @@ Evaluate the raw input corpus the user gave you against these triggers. Research
 - Multiple reasonable implementation paths exist (e.g. "real-time chat" could be WebSockets, SSE, long-polling, Pusher/Ably; "mobile app" could be native, React Native, Flutter, PWA).
 - Domain-specific tooling is implied but not named (ML model serving, payments, graph DB, auth providers, CRM integrations, geospatial, queueing, etc.).
 - Platform/deployment target is ambiguous (cloud provider, on-prem, serverless vs. container, edge vs. origin).
-- External integrations are mentioned without specifics (e.g. "integrate with CRM" → Salesforce / HubSpot / Pipedrive / ...).
+- External integrations are mentioned without specifics (e.g. "integrate with CRM" -> Salesforce / HubSpot / Pipedrive / ...).
 - Non-functional requirements (scale, latency, compliance) imply a meaningful architecture choice.
 
-If **none** of these trigger, the prompt is opinionated enough. Say so in one line — "Your prompt is specific enough; skipping research." — and jump to Phase 4 (grilling). Do not fake a research phase. But never skip silently: always print the one-line judgment so the user can push back.
+If **none** of these trigger, the prompt is opinionated enough. Say so in one line:
+
+```text
+Your task is specific enough; skipping research.
+```
+
+Then jump to Phase 4 (grilling). Do not fake a research phase. But never skip silently: always print the one-line judgment so the user can push back.
 
 If one or more trigger, proceed to Phase 2.
 
@@ -51,20 +60,20 @@ If one or more trigger, proceed to Phase 2.
 
 Print the header:
 
-```
+```text
 ### Research recommendation
 ```
 
 List 1–4 concrete decision axes that would benefit from research, each as a bullet: what the axis is, and one sentence on why researching it now saves rework. Example:
 
-- **Web framework choice.** The raw prompt says "build an API" but does not name a framework — picking FastAPI vs. Flask vs. Django REST affects every downstream plan's imports and testing shape.
+- **Web framework choice.** The raw prompt says "build an API" but does not name a framework — picking FastAPI vs. Flask vs. Django REST affects every downstream import and testing shape.
 - **Persistence layer.** "Store users" could mean SQLite, Postgres, or a managed DB — migration strategy differs.
 
 Then print the opt-in:
 
-```
+```text
 (a) Research now — I'll investigate each axis and present pros/cons for you to pick from.
-(b) Skip research — my prompt is opinionated enough / I want to move fast.
+(b) Skip research — my task is opinionated enough / I want to move fast.
 ```
 
 Emit `-- waiting for your choice --` and **stop**. Do not guess. Do not proceed until the user picks.
@@ -76,6 +85,7 @@ On `(b)` or silence, jump to Phase 4. On `(a)`, proceed to Phase 3.
 ## Phase 3 — Research and pros/cons presentation (only on opt-in)
 
 For each decision axis, research it. If your runtime has web-search tools, use them for current framework versions, recent benchmarks, and ecosystem health signals. If not, reason from training knowledge and **say so explicitly** in your output, e.g. "Reasoning from training knowledge — recommend cross-checking latest versions before committing."
+
 If you make a claim like `must`, `only`, or `not possible`, verify it against official documentation when search is available. If you cannot verify it, present it as an assumption or likely constraint — not as a settled fact.
 
 Present findings as compact numbered **choice cards per axis**, not tables. For each option, include exactly these fields in this order:
@@ -90,33 +100,9 @@ After the options for that axis, include:
 - `Recommendation:` one sentence if one option clearly fits the raw input corpus' constraints; otherwise say `no clear default — your call`
 - `Reply format:` one short line showing how the user can answer (`"Web framework: 1"`, `"FastAPI"`, or `"you pick"`)
 
-Example:
-
-```
-#### Web framework
-
-1. FastAPI
-   Best for: modern API + typed code
-   Upside: async-first, OpenAPI built in
-   Tradeoff: newer ecosystem, Python 3.8+
-
-2. Flask
-   Best for: small apps, learning
-   Upside: mature, minimal, huge ecosystem
-   Tradeoff: sync by default, less batteries included
-
-3. Django REST
-   Best for: CRUD-heavy, admin-facing apps
-   Upside: batteries included, admin UI
-   Tradeoff: heavier, more opinionated
-
-Recommendation: FastAPI — your mention of "typed" and "async" aligns cleanly.
-Reply format: "Web framework: 1", "FastAPI", or "you pick".
-```
-
 List all axes and their choice cards at once, not one-by-one. End with:
 
-```
+```text
 -- which option per axis? (reply in any format) --
 ```
 
@@ -128,19 +114,24 @@ Stop and wait. When the user replies, capture decisions. If the user says "you p
 
 After research (or skip), scan for remaining ambiguity across the full raw input corpus: goal, user type, scale/performance, success criteria, non-goals, constraints the user has not said aloud, anything research did not cover, and any contradictions between sources.
 
-Treat requests to "test", "verify", "walk through", "click through", "check live", or do a "manual visual check" as requests for agent-operated verification by default. Do not offer or recommend a manual visual check, user walkthrough, `approved` gate, or `skip` gate for normal UI/API behavior when objective checks can judge it. Prefer commands, automated browser flows, API calls, screenshots, DOM checks, logs, or equivalent agent-runnable checks. Mark verification human-only only when the raw corpus explicitly asks for human UAT or subjective review, or when no reasonable agent-side tool or fallback can judge the result; record that reason in the good prompt.
+Treat requests to "test", "verify", "walk through", "click through", "check live", or do a "manual visual check" as requests for agent-operated verification by default. Do not offer or recommend a manual visual check, user walkthrough, `approved` gate, or `skip` gate for normal UI/API behavior when objective checks can judge it. Prefer commands, automated browser flows, API calls, screenshots, DOM checks, logs, or equivalent agent-runnable checks. Mark verification human-only only when the raw corpus explicitly asks for human UAT or subjective review, or when no reasonable agent-side tool or fallback can judge the result; record that reason in `TASK.md`.
 
 Print:
 
-```
-### I need to grill you before I write the plan. Please answer these:
+```text
+### I need to clarify the task before I write TASK.md. Please answer these:
 ```
 
-Ask **3 to 7 questions**. Batch them. Each question specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short trade-off phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, always include **two separate lines**: first a neutral reply-format line (for example: `"Reply format: 1B, 2A, 3 freeform"`), then a separate recommendation line. If every question in the batch has a clear default, the second line should give the combined recommended answer set (for example: `"Recommended-default reply, if that matches your intent: 1B, 2B, 3A"`). If one or more questions have no clear default, the second line should say that explicitly instead of faking a full recommended set (for example: `"No combined recommended-default reply because question 3 has no clear default."`). Users can always answer freeform.
+Ask **3 to 7 questions**. Batch them. Each question must be specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short tradeoff phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, always include **two separate lines**:
+
+- a neutral reply-format line, e.g. `"Reply format: 1B, 2A, 3 freeform"`;
+- a recommendation line.
+
+If every question in the batch has a clear default, the recommendation line should give the combined recommended answer set, e.g. `"Recommended-default reply, if that matches your intent: 1B, 2B, 3A"`. If one or more questions have no clear default, the recommendation line should say that explicitly instead of faking a full recommended set. Users can always answer freeform.
 
 Then emit:
 
-```
+```text
 -- waiting for your answers --
 ```
 
@@ -153,7 +144,7 @@ Stop. Do not invent answers. After receiving replies, if still ambiguous, run on
 Before writing, do a compact self-review of the artifact draft: schema sections present or omitted correctly, no placeholders or contradictions, every requirement testable, success criteria verifiable, and any human-only verification reason explicit. Fix the draft; if a material ambiguity remains, ask instead of writing around it.
 
 1. **Pick NN.** List `./H20/` and find existing `NN-<kebab>/` directories. Choose `max(NN) + 1`, or `01` if none exist.
-2. **Derive kebab title** from the agreed goal — verbs-and-nouns, no filler (`wordcount-cli`, not `project-1`).
+2. **Derive kebab title** from the agreed task — verbs-and-nouns, no filler (`wordcount-cli`, not `project-1`).
 3. **Create** `./H20/NN-<kebab>/`.
 4. **Write** `./H20/NN-<kebab>/raw-prompt.txt`:
    - A manifest of the raw input corpus, in stable order.
@@ -162,11 +153,11 @@ Before writing, do a compact self-review of the artifact draft: schema sections 
      - its contents verbatim inside a clearly separated block.
    - `---` separator.
    - Full transcript beneath: Phase 1 judgment, Phase 2 offer + user's choice (if shown), Phase 3 choice cards + decisions (if run), Phase 4 grilling Q&A. Future humans read this to see exactly how the vague idea became concrete from the full source corpus.
-5. **Write** `./H20/NN-<kebab>/good-prompt.md` conforming to the README `good-prompt.md schema`. Land framework/tech decisions in `## Context`. Populate `## Research notes` **only if Phase 3 ran**. Populate `## Open questions` **only if grilling left gaps you could not close**.
+5. **Write** `./H20/NN-<kebab>/TASK.md` conforming to the README `TASK.md schema`. Land framework/tech decisions in `## Context`. Populate `## Research notes` **only if Phase 3 ran**. Populate `## Open questions` **only if grilling left gaps you could not close**.
 6. End with a compact handoff:
    - milestone directory path;
    - written artifact paths;
-   - exact next-step planner invocation;
+   - exact next-step master-plan invocation;
    - recommendation to clear or reset context before stage 2 (for most coding agents: `/clear`).
 7. If your runtime cannot read or write files, stop and say H20 expects a coding agent with filesystem access. Do not pretend the files were written.
 
@@ -176,18 +167,20 @@ Before writing, do a compact self-review of the artifact draft: schema sections 
 
 - Do not invent features the user did not request.
 - Do not add "best-practice" product requirements (auth, logging, CI, broad test coverage, configurability) unless the user said so. Minimal executor-added smoke tests are implementation safety, not product scope.
-- If the user's answer to a clarifying question was "I don't know", write it under `## Open questions` in good-prompt.md — do not guess and do not block.
-- If `BLOCKED.md` is part of the corpus, use it to sharpen research and grilling, but do not let it silently expand the goal beyond the user's raw prompt.
+- If the user's answer to a clarifying question was "I don't know", write it under `## Open questions` in `TASK.md` — do not guess and do not block.
+- If `BLOCKED.md` is part of the corpus, use it to sharpen research and grilling, but do not let it silently expand the task beyond the user's raw prompt.
 - Never skip the research-need judgment. If you decide research is not needed, say so out loud in one line so the user can push back.
 
 ---
 
-## Template: good-prompt.md
+## Template: TASK.md
 
-Fill this in when writing `./H20/NN-<kebab>/good-prompt.md`. Omit optional sections when unused — empty sections are not allowed.
+Fill this in when writing `./H20/NN-<kebab>/TASK.md`. Omit optional sections when unused — empty sections are not allowed.
 
 ```markdown
-# Goal
+# Task: <milestone title>
+
+## Goal
 
 <one paragraph, imperative voice>
 
@@ -216,14 +209,12 @@ Fill this in when writing `./H20/NN-<kebab>/good-prompt.md`. Omit optional secti
 
 **<axis name>**: Options considered — <A>, <B>, <C>. Chose <X> because <one-sentence rationale>.
 
-**<axis name>**: …
-
 ## Open questions
 (omit this section entirely if grilling resolved everything)
 
-- <open item — will block which plan, and what answer is needed>
+- <open item — will block which later stage, and what answer is needed>
 ```
 
 ---
 
-1-create-prompt.md — end. Contract: ./H20/CONTRACT.md § Schemas
+1-clarify-task.md — end. Contract: ./H20/CONTRACT.md § Schemas
