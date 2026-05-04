@@ -141,7 +141,7 @@ Stop. Do not invent answers. After receiving replies, if still ambiguous, run on
 
 ## Phase 5 — Writing
 
-Before writing, do a compact self-review of the artifact draft: schema sections present or omitted correctly, no placeholders or contradictions, every requirement testable, success criteria verifiable, and any human-only verification reason explicit. Fix the draft; if a material ambiguity remains, ask instead of writing around it.
+Before writing, do a compact self-review of the artifact draft: schema sections present or omitted correctly, no placeholders or contradictions, every requirement testable, success criteria verifiable, and any human-only verification reason explicit. Also run a source-fidelity check: if the raw input corpus contains exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, or security exclusions that affect execution, preserve them in `TASK.md` or explicitly state why they were superseded. Fix the draft; if a material ambiguity remains, ask instead of writing around it.
 
 1. **Pick NN.** List `./H20/` and find existing `NN-<kebab>/` directories. Choose `max(NN) + 1`, or `01` if none exist.
 2. **Derive kebab title** from the agreed task — verbs-and-nouns, no filler (`wordcount-cli`, not `project-1`).
@@ -153,7 +153,7 @@ Before writing, do a compact self-review of the artifact draft: schema sections 
      - its contents verbatim inside a clearly separated block.
    - `---` separator.
    - Full transcript beneath: Phase 1 judgment, Phase 2 offer + user's choice (if shown), Phase 3 choice cards + decisions (if run), Phase 4 grilling Q&A. Future humans read this to see exactly how the vague idea became concrete from the full source corpus.
-5. **Write** `./H20/NN-<kebab>/TASK.md` conforming to the README `TASK.md schema`. Land framework/tech decisions in `## Context`. Populate `## Research notes` **only if Phase 3 ran**. Populate `## Open questions` **only if grilling left gaps you could not close**.
+5. **Write** `./H20/NN-<kebab>/TASK.md` conforming to the README `TASK.md schema`. Land framework/tech decisions in `## Context`. Populate `## Research notes` **only if Phase 3 ran**. Populate `## Open questions` **only if grilling left gaps you could not close**. When a source is already a detailed plan or spec, do not compress away execution-critical literals. Copy exact command/config/query/path/security lists into the relevant `TASK.md` sections, or record the narrower accepted replacement explicitly.
 6. End with a compact handoff:
    - milestone directory path;
    - written artifact paths;
@@ -167,6 +167,7 @@ Before writing, do a compact self-review of the artifact draft: schema sections 
 
 - Do not invent features the user did not request.
 - Do not add "best-practice" product requirements (auth, logging, CI, broad test coverage, configurability) unless the user said so. Minimal executor-added smoke tests are implementation safety, not product scope.
+- Do not replace exact source literals with phrases like "from the plan", "as above", or "relevant files" when those literals are needed for later planning or execution. Preserve them or mark the accepted supersession explicitly.
 - If the user's answer to a clarifying question was "I don't know", write it under `## Open questions` in `TASK.md` — do not guess and do not block.
 - If `BLOCKED.md` is part of the corpus, use it to sharpen research and grilling, but do not let it silently expand the task beyond the user's raw prompt.
 - Never skip the research-need judgment. If you decide research is not needed, say so out loud in one line so the user can push back.

@@ -158,7 +158,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - `# Task: <milestone title>`
 - `## Goal` — one paragraph, imperative voice.
 - `## Context` — tech stack, target runtime, relevant existing code, users. Research-phase decisions land here.
-- `## Requirements` — numbered list. Each item is one testable requirement.
+- `## Requirements` — numbered list. Each item is one testable requirement. Preserve execution-critical source literals such as exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions, or state the accepted supersession explicitly.
 - `## Non-goals` — explicit scope exclusions.
 - `## Success criteria` — bulleted, verifiable (command, test, observable behavior, API response, screenshot/DOM check, or equivalent).
 - `## Research notes` (optional) — only present if the clarify-task research phase ran. Briefly records each decision axis researched, options considered, and the choice made.
@@ -168,7 +168,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 
 - `# Master Plan: <milestone title>`
 - `## Task source` — path to this milestone's `TASK.md`.
-- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, and key decisions. This is the clean long "how".
+- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, exact source literals needed for execution, and key decisions. This is the clean long "how".
 - `## Step outline` — ordered list of expected execution steps at the outcome level. These are not yet `STEP-NN` files, but they should be specific enough for `3-emit-steps.md` to compile mechanically.
 - `## Requirement coverage` — table with columns: `Requirement | Covered by | Notes`.
 - `## Success coverage` — table with columns: `Success criterion | Verification approach | Notes`.
@@ -277,14 +277,14 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
    If a blocked milestone needs a fresh task pass, include the previous raw prompt plus `BLOCKED.md`:
    `@H20/1-clarify-task.md @H20/01-my-feature/raw-prompt.txt @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 2. In most coding agents: `/clear`.
-4. Paste `2-generate-master-plan.md` into a coding agent and point it at the milestone dir or `TASK.md`. The agent reads repo-local instruction files if present, surfaces material strategy choices, and writes `MASTER-PLAN.md`.
+4. Paste `2-generate-master-plan.md` into a coding agent and point it at the milestone dir or `TASK.md`. The agent reads repo-local instruction files if present, uses same-milestone `raw-prompt.txt` only as a source-fidelity reference for already-agreed scope, surfaces material strategy choices, and writes `MASTER-PLAN.md`.
    Shortcuts:
    `@H20/2-generate-master-plan.md @H20/01-my-feature/`
    `@H20/2-generate-master-plan.md @H20/01-my-feature/TASK.md`
    If a blocked execution invalidated strategy, pass `BLOCKED.md` explicitly:
    `@H20/2-generate-master-plan.md @H20/01-my-feature/ @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 3.
-5. Paste `3-emit-steps.md` into a coding agent and point it at the milestone dir. The agent compiles `TASK.md` and `MASTER-PLAN.md` into `ROADMAP.md` and `STEP-NN--<kebab>.md` files.
+5. Paste `3-emit-steps.md` into a coding agent and point it at the milestone dir. The agent compiles `TASK.md` and `MASTER-PLAN.md` into `ROADMAP.md` and `STEP-NN--<kebab>.md` files, preserving exact execution-critical literals rather than relying on source memory.
    Shortcuts:
    `@H20/3-emit-steps.md @H20/01-my-feature/`
    If re-emitting after a blocked execution, pass `BLOCKED.md` explicitly so the emitter can rewrite the tail from the correct recovery point:

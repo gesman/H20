@@ -6,7 +6,7 @@ Agent-only instruction file for H20 stage 3. Use it to compile a milestone's `TA
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as step-emitter input.
-- If exactly one milestone directory is present, use it and read `<milestone>/TASK.md` plus `<milestone>/MASTER-PLAN.md`.
+- If exactly one milestone directory is present, use it and read `<milestone>/TASK.md` plus `<milestone>/MASTER-PLAN.md`; also read `<milestone>/raw-prompt.txt` if present as a source-fidelity reference.
 - If exactly one `TASK.md` file is present, infer the milestone directory as that file's parent and use it.
 - If exactly one `MASTER-PLAN.md` file is present, infer the milestone directory as that file's parent and use it.
 - If exactly one `BLOCKED.md` file is present, it must belong to the same milestone directory you resolved from the input. Read it in addition to `TASK.md` and `MASTER-PLAN.md`.
@@ -32,6 +32,7 @@ State assumptions explicitly. If the task and master plan still permit two mater
 - A milestone directory path, e.g. `./H20/01-<kebab>/`, or a direct path to `TASK.md` / `MASTER-PLAN.md` inside a milestone directory.
 - Optional: a direct path to `<milestone>/BLOCKED.md` when re-emitting after a blocked execution.
 - Resolve the milestone directory first, then read `<milestone>/TASK.md` and `<milestone>/MASTER-PLAN.md`.
+- If `<milestone>/raw-prompt.txt` exists, read it after `TASK.md` and `MASTER-PLAN.md` as a source-fidelity reference. Use it only to preserve exact literals for scope already present in `TASK.md` or `MASTER-PLAN.md`, not to add fresh scope or strategy.
 - If `MASTER-PLAN.md` is missing, STOP and tell the user to run `2-generate-master-plan.md`.
 - If `BLOCKED.md` was provided, read it after `TASK.md` and `MASTER-PLAN.md`. Treat it as authoritative execution-stage evidence about why the existing step chain needs adjustment. It is recovery context, not new product scope by itself.
 - If `BLOCKED.md` names an earliest safe recovery point, use it to decide where the rewrite starts. Never assume the rewrite starts at `STEP-(N+1)`; if the current step has no done-file, recovery usually starts at the current step.
@@ -56,7 +57,7 @@ These are rules, not guidance. Follow them.
 6. **No test-only steps unless the task asked for TDD or thorough coverage.** Tests are typically part of the step that produces the code they test — and executor best-effort testing will add smoke checks automatically. Separate test steps exist only when success criteria explicitly demand dedicated validation.
 7. **Prefer the simplest chain that satisfies the task and master plan.** No speculative abstraction steps, no configurability steps, no future-proofing steps unless `TASK.md` or `MASTER-PLAN.md` explicitly asks for them.
 8. **Every step needs concrete verification.** Prefer checks the executor can run itself: commands, automated flows, API calls, screenshots, DOM checks, logs, or equivalent objective checks. Interpret "manual", "real browser", "visual", "walkthrough", "check live", "approved", and "skip" language as verification intent, not proof that a human must do it. Mark verification human-only only when no reasonable agent-side tool or fallback can judge it. If a step contains human-only verification, state the concrete reason and the unavailable or insufficient automation path.
-9. **Coverage audit before finalizing.** Make a private checklist of every numbered `TASK.md` requirement, every `TASK.md` success criterion, every `MASTER-PLAN.md` step-outline item, and every coverage-table row. Each must be covered by at least one step's goal, actions, deliverables, or verification. If anything is uncovered, revise the step set or STOP and ask.
+9. **Coverage audit before finalizing.** Make a private checklist of every numbered `TASK.md` requirement, every `TASK.md` success criterion, every `MASTER-PLAN.md` step-outline item, every coverage-table row, and every execution-critical source literal preserved by `TASK.md`, `MASTER-PLAN.md`, or same-milestone `raw-prompt.txt` for already-agreed scope. This includes exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions. Each must be covered by at least one step's goal, actions, deliverables, or verification. If anything is uncovered, revise the step set or STOP and ask.
 10. **Goals/verifications must be outcome-shaped.** Deliverables can be file-shaped, but step goals and verification should describe user-visible or system-observable results rather than only file creation.
 11. **Prefer split over merge when execution cost is uncertain.** If you are unsure whether one step will fit comfortably in a fresh coding-agent session, split it into two steps with a clear done-file handoff.
 
@@ -67,7 +68,7 @@ These are rules, not guidance. Follow them.
 Before writing files, run a compact self-review of the step set:
 
 - no placeholders or `TBD`;
-- every requirement, success criterion, and master-plan outline item covered;
+- every requirement, success criterion, master-plan outline item, and execution-critical source literal covered or explicitly superseded;
 - every step has at most one prerequisite;
 - each verification is agent-runnable or explicitly human-only with a reason;
 - no step is only setup, testing, or future work;
@@ -103,7 +104,9 @@ After writing `ROADMAP.md` and the step files, end with a compact handoff:
 
 - Do not invent requirements `TASK.md` does not contain.
 - Do not invent strategy `MASTER-PLAN.md` does not contain. If the master plan is wrong or incomplete, stop and tell the user to rerun stage 2.
+- Do not treat `raw-prompt.txt` as fresh scope or strategy in stage 3. Use it only to preserve exact literals for requirements and strategy already accepted in `TASK.md` and `MASTER-PLAN.md`; if it exposes missing execution-critical detail, stop and tell the user to rerun stage 2.
 - Do not silently reduce scope. Never introduce `v1`, `placeholder`, `static for now`, `hardcoded for now`, `future enhancement`, or equivalent language unless `TASK.md` explicitly says so.
+- Do not write step actions that rely on unstated source memory, such as "use the plan's ignore rules" or "run the validation queries from the source", unless the step itself copies the exact list or names a same-milestone artifact and section the executor is required to read.
 - Do not add speculative steps like `STEP-05--future-enhancements`. Step emission is for what the milestone promises, not what it might want later.
 - Names matter. `STEP-02--add-pytest-coverage.md` is right; `STEP-02--phase-2.md` is wrong.
 - Do not treat file creation as coverage by itself. A requirement or success criterion is only covered if the step's goal, actions, and verification would make it observably true.

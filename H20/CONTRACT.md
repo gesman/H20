@@ -62,7 +62,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - `# Task: <milestone title>`
 - `## Goal` — one paragraph, imperative voice.
 - `## Context` — tech stack, target runtime, relevant existing code, users. Research-phase decisions land here.
-- `## Requirements` — numbered list. Each item is one testable requirement.
+- `## Requirements` — numbered list. Each item is one testable requirement. Preserve execution-critical source literals such as exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions, or state the accepted supersession explicitly.
 - `## Non-goals` — explicit scope exclusions.
 - `## Success criteria` — bulleted, verifiable.
 - `## Research notes` — optional; include only when the clarify-task research phase ran.
@@ -72,7 +72,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 
 - `# Master Plan: <milestone title>`
 - `## Task source` — path to this milestone's `TASK.md`.
-- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, and key decisions.
+- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, exact source literals needed for execution, and key decisions.
 - `## Step outline` — ordered list of expected execution steps at the outcome level.
 - `## Requirement coverage` — table with columns: `Requirement | Covered by | Notes`.
 - `## Success coverage` — table with columns: `Success criterion | Verification approach | Notes`.

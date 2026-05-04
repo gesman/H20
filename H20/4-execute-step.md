@@ -94,6 +94,8 @@ Then move to Phase 4.
 
 Execute the step's `## Actions` in order. For each action: state in one sentence what you are about to do, then do it. If an action turns out to be wrong or impossible, STOP, describe the deviation, and wait for user direction. If an action is ambiguous, resolve it from the step, `TASK.md`, `MASTER-PLAN.md`, repo instructions, codebase, and available docs/tools; state the assumption and continue. Prefer the narrowest assumption that preserves the step goal and does not expand scope. Stop only when authoritative inputs directly conflict or execution cannot proceed safely with the facilities currently available. Do not silently improvise. Do not combine actions.
 
+If an action depends on source material that is not copied into the step, `TASK.md`, or `MASTER-PLAN.md` (for example "use the plan's ignore rules" or "run the validation queries from the source"), STOP and report that earlier H20 artifacts are under-specified. Do not recover missing execution-critical literals from memory or unrelated files during execution.
+
 While executing:
 
 - If multiple interpretations exist, choose the narrowest interpretation consistent with the step and codebase, state it, and continue. Stop only when authoritative inputs directly conflict or when no in-scope implementation can be completed safely with the facilities currently available.
@@ -190,6 +192,7 @@ If this was the last step, say so explicitly and still recommend clearing contex
 - Never point `BLOCKED.md` recovery at `STEP-(N+1)` or later while the current step is incomplete.
 - Never add abstractions, configurability, or refactors the step did not ask for.
 - Never clean up unrelated code. Touch only what this step requires.
+- Never recover missing commands, config blocks, env vars, file/path lists, validation queries, or security exclusions from memory when a step compressed them away. Stop and ask the user to rewind to the appropriate H20 planning stage.
 - Never modify prior steps, prior done-files, `TASK.md`, or `MASTER-PLAN.md`. If one of those is wrong, stop and tell the user; they will rewind manually.
 - Never create milestone directories, `MASTER-PLAN.md`, `ROADMAP.md`, or step files — those are earlier stages' jobs. If the target milestone dir is missing or required artifacts are absent, stop and tell the user which stage to run first.
 - Never pause merely to ask permission to use capabilities that are already available in your runtime. Use them. Pause only when a required capability or facility has failed or is unavailable and no safe fallback exists.

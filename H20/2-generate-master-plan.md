@@ -6,7 +6,7 @@ Agent-only instruction file for H20 stage 2. Use it to turn a milestone's `TASK.
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as master-plan input.
-- If exactly one milestone directory is present, use it and read `<milestone>/TASK.md`.
+- If exactly one milestone directory is present, use it and read `<milestone>/TASK.md`; also read `<milestone>/raw-prompt.txt` if present as a source-fidelity reference.
 - If exactly one `TASK.md` file is present, infer the milestone directory as that file's parent and use it.
 - If exactly one `BLOCKED.md` file is present, it must belong to the same milestone directory you resolved from the input. Read it in addition to `TASK.md`.
 - If both a milestone directory and a `TASK.md` file are present and they point to the same milestone, use that milestone.
@@ -34,6 +34,7 @@ Run the five phases below in order. Do not merge them.
 - A milestone directory path, e.g. `./H20/01-<kebab>/`, or a direct path to `TASK.md` inside a milestone directory.
 - Optional: a direct path to `<milestone>/BLOCKED.md` when re-planning after a blocked execution.
 - Resolve the milestone directory first, then read `<milestone>/TASK.md`.
+- If `<milestone>/raw-prompt.txt` exists, read it after `TASK.md` as a source-fidelity reference. Use it only to recover exact literals for scope already present in `TASK.md`, not to add fresh scope.
 - If `BLOCKED.md` was provided, read it after `TASK.md` and treat it as authoritative execution-stage evidence about invalidated assumptions or newly-discovered constraints. It is recovery context, not new product scope by itself.
 - Resolve the project root as the parent of the `H20/` directory that owns the milestone. If repo-local instruction files exist there (`CLAUDE.md`, `AGENTS.md`, or similarly obvious agent-instruction files under `.claude/` or `.agents/`), read them before planning and follow them. If they conflict with `TASK.md`, STOP and surface the conflict instead of guessing.
 
@@ -48,6 +49,7 @@ Run the five phases below in order. Do not merge them.
 Read:
 
 - `TASK.md` in full;
+- `raw-prompt.txt`, if present, only as a source-fidelity reference for exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions tied to `TASK.md` scope;
 - `BLOCKED.md` if provided;
 - repo-local instruction files, if present;
 - enough project files to understand the target stack, layout, and existing boundaries.
@@ -59,6 +61,7 @@ Before moving on, print a compact summary:
 - milestone path;
 - task title / goal;
 - relevant existing project surfaces discovered;
+- execution-critical source literals preserved or explicitly superseded;
 - any blocker evidence included;
 - assumptions you are currently relying on.
 
@@ -124,6 +127,7 @@ Draft `MASTER-PLAN.md` privately, then run a compact self-audit before writing:
 - Are implementation boundaries, data flow, and sequencing rationale explicit enough for a fresh agent to emit steps without guessing?
 - Are risk mitigations concrete and tied to verification or step boundaries?
 - Is every requirement and success criterion represented in the coverage tables?
+- Are execution-critical source literals from `TASK.md` and any same-milestone `raw-prompt.txt` preserved in the strategy, coverage tables, or planner notes, or explicitly marked as superseded?
 - Are planning notes visible instead of hidden as silent assumptions?
 - Is the plan per-milestone, not a broad long-term roadmap?
 
@@ -159,7 +163,9 @@ If your runtime cannot read or write files, stop and say H20 expects a coding ag
 ## Anti-drift rules
 
 - Do not invent requirements `TASK.md` does not contain.
+- Do not treat `raw-prompt.txt` as fresh scope in stage 2. Use it only to preserve exact literals for requirements already present in `TASK.md`; if it reveals that `TASK.md` accidentally omitted execution-critical detail for an agreed requirement, record the detail or stop and tell the user to rerun stage 1.
 - Do not silently reduce scope. Never introduce `v1`, `placeholder`, `static for now`, `hardcoded for now`, `future enhancement`, or equivalent language unless `TASK.md` explicitly says so.
+- Do not replace exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, or security exclusions with vague references like "from the plan" or "as needed". Preserve them in `MASTER-PLAN.md` where they affect execution, or explicitly explain the supersession.
 - Do not emit executable steps. Stage 2 owns strategy only.
 - Do not treat `BLOCKED.md` as permission to invent product scope.
 - Do not let implementation taste become scope creep. Prefer existing repo patterns and the smallest strategy that satisfies the task.
