@@ -9,6 +9,7 @@ Current extras:
 - `4-autoexec-claude` — Claude Code wrapper that executes the next pending step(s) for a milestone in a loop using the current user's Claude subscription.
 - `4-autoexec-codex` — Codex CLI wrapper that executes the next pending step(s) for a milestone in a loop using the current user's Codex login.
 - `5-review.md` — review-stage prompt that writes immutable review snapshots and follow-up raw prompts under `./H20/Reviews/<milestone>/`.
+- `pullh20` — sync helper for updating a copied `./H20/` payload from a source H20 directory while preserving local project artifacts.
 
 Notes:
 
@@ -16,6 +17,7 @@ Notes:
 - `4-autoexec-claude` is Claude-specific by design. It is a user convenience, not part of the core H20 payload.
 - `4-autoexec-codex` is Codex-specific by design. It is a user convenience, not part of the core H20 payload.
 - `5-review.md` is agent-agnostic in wording, but it is intentionally non-core. It does not modify milestone state and only writes review artifacts under `./H20/Reviews/`.
+- `pullh20` is a project-copy maintenance helper. It is not part of execution, recovery, or review semantics.
 - Autoexec runs pass literal control lines into `4-execute-step.md`:
   - `AUTOEXEC_MODE=1`
   - `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used
@@ -81,3 +83,12 @@ Notes:
   - `--dry-run`: print the resolved milestone and selected pending steps without launching Codex or writing files
 - Codex runs use `-a never`, optional `-c model_reasoning_effort=<level>`, `--sandbox danger-full-access`, `--ephemeral`, and `--skip-git-repo-check`
 - If `--model gpt-5-codex` is passed, the wrapper rewrites it to `gpt-5.5` before launching Codex because ChatGPT-backed Codex CLI rejects the older alias.
+
+`pullh20` usage:
+
+- run from a target project root that contains or should contain `./H20/`
+- no args: syncs from the default local source directory compiled into the helper, or from `PULLH20_SOURCE_DIR` if set
+- `pullh20 <source-dir>`: syncs from an explicit source payload directory
+- preserves local milestone directories matching `NN-<kebab>/`
+- preserves local `RawPrompts/` and `Reviews/` directories when present
+- requires `rsync`

@@ -1,0 +1,7 @@
+Optional staging folder for raw user prompt files.
+
+H20 does not read this directory automatically. Pass any file here explicitly to
+1-clarify-task.md or another H20 prompt when you want it included as source
+material.
+
+Generated milestone source remains milestone-local as raw-prompt.txt.

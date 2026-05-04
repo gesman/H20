@@ -3,14 +3,14 @@
 H20 is a small set of markdown prompts and a directory convention for coding agents with filesystem access. It turns a vague idea into a working project through a four-stage flow with fresh context at every boundary:
 
 ```text
-raw prompt -> TASK.md -> MASTER-PLAN.md -> STEP-NN.md -> execution
+raw prompt -> TASK.md -> MASTER-PLAN.md -> STEP-NN--<kebab>.md -> execution
 ```
 
 For copied payloads, the same contract also ships as `./H20/CONTRACT.md` so a project that receives only the `H20/` directory remains self-contained. In this source repo, the root `README.md` remains the authoritative edit target for the contract; keep the payload copy in sync.
 
 Core H20 has no CLI, hooks, runtime, package manager, telemetry, or daemon. Copy the `./H20/` directory into a project and paste the stage prompts into any coding agent that can read and write files. Optional convenience scripts may exist under `./H20/Extras/`, but they are explicitly outside the core contract.
 
-The files under `./H20/` are agent-only instruction files. User-facing usage guidance, examples, and workflow notes live in this README.
+The core prompt files under `./H20/` are agent-only instruction files. User-facing usage guidance, examples, and workflow notes live in this README.
 
 ## Super quick start
 
@@ -114,8 +114,11 @@ Inside a target project using H20:
 │   ├── 4-autoexec-claude
 │   ├── 4-autoexec-codex
 │   ├── 5-review.md
+│   ├── pullh20
 │   ├── README.md
 │   └── helpers/
+├── RawPrompts/                    (optional raw-source stash; non-contractual)
+│   └── 0_placeholder-for-raw-user-prompts.txt
 ├── Reviews/                       (optional review snapshots; non-contractual)
 │   └── 01-<first-milestone>/
 │       ├── REVIEW-01.md
@@ -150,6 +153,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - **Blocked handoff:** optional milestone-root `BLOCKED.md`. At most one unresolved blocker file per milestone.
 - **Review snapshots:** optional `./H20/Reviews/NN-<kebab>/REVIEW-NN.md`, where the directory name matches the reviewed milestone and the review file number is local to that review directory.
 - **Review follow-up prompts:** optional `./H20/Reviews/NN-<kebab>/raw-review-prompt-NN.md`, paired with the review snapshot that produced it.
+- **Raw source stash:** optional `./H20/RawPrompts/` for user-managed input files. H20 does not read it automatically; pass files from it explicitly.
 
 ## Schemas
 
@@ -271,7 +275,7 @@ These overlays do **not** change the done-file recovery rule, partial-run detect
 2. Gather raw source material. This can be one file, many files, a directory, pasted text, or any combination.
 3. Paste `1-clarify-task.md` into a coding agent, then your raw input corpus. The agent may recommend a tech/framework research phase, then it grills you. You get `raw-prompt.txt` and `TASK.md`.
    Shortcuts for coding agents that support file references:
-   `@H20/1-clarify-task.md @raw_prompt.txt`
+   `@H20/1-clarify-task.md @idea-notes.txt`
    `@H20/1-clarify-task.md @raw-prompt1.txt @raw-prompt2.txt`
    `@H20/1-clarify-task.md @raw-prompts/`
    If a blocked milestone needs a fresh task pass, include the previous raw prompt plus `BLOCKED.md`:
@@ -356,3 +360,16 @@ Syntax:
 Accepted path styles include both `./H20/05-my-milestone` and `./05-my-milestone`, plus direct `STEP-NN--*.md` paths.
 
 The generated `raw-review-prompt-NN.md` is intentionally narrower than the full review and is meant for the user to read, trim, and then feed into the normal H20 pipeline via `@H20/1-clarify-task.md`.
+
+### pullh20
+
+Purpose: update a project's copied `./H20/` payload from this source repo while preserving local milestone directories, `RawPrompts/`, and `Reviews/`.
+
+Syntax:
+
+```bash
+./H20/Extras/pullh20 [source-dir]
+PULLH20_SOURCE_DIR=/path/to/H20/H20 ./H20/Extras/pullh20
+```
+
+Run it from the target project root. It is a convenience sync helper, not part of the H20 contract.
