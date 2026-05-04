@@ -29,7 +29,7 @@ The files under `./H20/` are agent-only instruction files. User-facing usage gui
 
    `./H20/Extras/4-autoexec-claude --milestone ./H20/01-my-feature --model opus --skiphuman [--steps 2]`
 
-   `./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.4 --skiphuman [--steps 2]`
+   `./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.5 --reasoning xhigh --skiphuman [--steps 2]`
 
    These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending step(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected steps without launching the agent.
 
@@ -339,7 +339,7 @@ Purpose: Codex CLI wrapper that executes the next pending H20 step(s) for one mi
 Syntax:
 
 ```bash
-./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature [--steps N] [--model <model-id>] [--skiphuman] [--dry-run]
+./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature [--steps N] [--model <model-id>] [--reasoning minimal|low|medium|high|xhigh] [--skiphuman] [--dry-run]
 ```
 
 ### 5-review

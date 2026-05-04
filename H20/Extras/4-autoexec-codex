@@ -19,11 +19,54 @@ RESET=$'\033[0m'
 
 MILESTONE=""
 MODEL=""
+REASONING=""
 STEP_LIMIT=0
 SKIP_HUMAN=0
 DRY_RUN=0
 
+codex_config_value() {
+    local key="$1"
+    local config="${CODEX_HOME:-$HOME/.codex}/config.toml"
+
+    if [[ ! -f "$config" ]]; then
+        printf "not set in %s" "$config"
+        return 0
+    fi
+
+    awk -v key="$key" '
+        BEGIN { found = 0 }
+        /^[[:space:]]*\[/ { exit }
+        /^[[:space:]]*#/ { next }
+        {
+            line = $0
+            sub(/[[:space:]]*#.*/, "", line)
+            pattern = "^[[:space:]]*" key "[[:space:]]*="
+            if (line ~ pattern) {
+                sub(/^[^=]*=[[:space:]]*/, "", line)
+                sub(/[[:space:]]*$/, "", line)
+                if (line ~ /^".*"$/) {
+                    line = substr(line, 2, length(line) - 2)
+                } else if (line ~ /^\047.*\047$/) {
+                    line = substr(line, 2, length(line) - 2)
+                }
+                print line
+                found = 1
+                exit
+            }
+        }
+        END {
+            if (!found) {
+                print "not set in " FILENAME
+            }
+        }
+    ' "$config"
+}
+
 usage() {
+    local current_model current_reasoning
+    current_model="$(codex_config_value model)"
+    current_reasoning="$(codex_config_value model_reasoning_effort)"
+
     cat <<EOF
 ${BOLD}${CYAN}4-autoexec-codex${RESET} ${DIM}(optional H20 extra; Codex-specific)${RESET}
 
@@ -33,21 +76,24 @@ ${BOLD}Purpose${RESET}
   (ChatGPT or API key).
 
 ${BOLD}Syntax${RESET}
-  ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}<model-id>${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--dry-run${RESET}]
+  ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} [${YELLOW}--steps${RESET} ${MAGENTA}N${RESET}] [${YELLOW}--model${RESET} ${MAGENTA}<model-id>${RESET}] [${YELLOW}--reasoning${RESET} ${MAGENTA}minimal|low|medium|high|xhigh${RESET}] [${YELLOW}--skiphuman${RESET}] [${YELLOW}--dry-run${RESET}]
   milestone path may be passed as ${MAGENTA}./H20/01-my-feature${RESET} or ${MAGENTA}./01-my-feature${RESET}
 
 ${BOLD}Parameter defaults${RESET}
   ${YELLOW}--milestone${RESET}: required; no default
   ${YELLOW}--steps${RESET}: run all pending steps
-  ${YELLOW}--model${RESET}: use your local Codex CLI default
+  ${YELLOW}--model${RESET}: use your local Codex CLI default. Current CLI default value: ${MAGENTA}${current_model}${RESET}
+  ${YELLOW}--reasoning${RESET}: use your local Codex CLI default. Current CLI default value: ${MAGENTA}${current_reasoning}${RESET}
   ${YELLOW}--skiphuman${RESET}: omitted by default, so human-only checks stop and hand off
   ${YELLOW}--dry-run${RESET}: omitted by default, so live execution runs
-  current tested explicit model: ${MAGENTA}gpt-5.4${RESET}
+  current tested explicit model: ${MAGENTA}gpt-5.5${RESET}
+  reasoning values accepted by Codex config: ${MAGENTA}minimal, low, medium, high, xhigh${RESET}
 
 ${BOLD}Examples${RESET}
   ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET}
   ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--steps${RESET} ${MAGENTA}2${RESET}
-  ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}gpt-5.4${RESET}
+  ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}gpt-5.5${RESET}
+  ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--model${RESET} ${MAGENTA}gpt-5.5${RESET} ${YELLOW}--reasoning${RESET} ${MAGENTA}xhigh${RESET}
   ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--skiphuman${RESET}
   ${GREEN}./H20/Extras/4-autoexec-codex${RESET} ${YELLOW}--milestone${RESET} ${MAGENTA}./H20/01-my-feature${RESET} ${YELLOW}--dry-run${RESET}
 
@@ -83,8 +129,19 @@ fail() {
 normalize_model() {
     case "$MODEL" in
         gpt-5-codex)
-            warn "${BOLD}Model alias gpt-5-codex is no longer accepted by ChatGPT-backed Codex CLI${RESET}${YELLOW} — using gpt-5.4 instead${RESET}"
-            MODEL="gpt-5.4"
+            warn "${BOLD}Model alias gpt-5-codex is no longer accepted by ChatGPT-backed Codex CLI${RESET}${YELLOW} — using gpt-5.5 instead${RESET}"
+            MODEL="gpt-5.5"
+            ;;
+    esac
+}
+
+validate_reasoning() {
+    [[ -z "$REASONING" ]] && return 0
+    case "$REASONING" in
+        minimal|low|medium|high|xhigh)
+            ;;
+        *)
+            fail "--reasoning expects one of: minimal, low, medium, high, xhigh"
             ;;
     esac
 }
@@ -181,6 +238,11 @@ dry_run_preview() {
     else
         echo "  model: Codex CLI default"
     fi
+    if [[ -n "$REASONING" ]]; then
+        echo "  reasoning: $REASONING"
+    else
+        echo "  reasoning: Codex CLI default"
+    fi
     if [[ "$STEP_LIMIT" -eq 0 ]]; then
         echo "  steps: all pending steps"
     else
@@ -227,6 +289,9 @@ run_codex_for_step() {
     if [[ -n "$MODEL" ]]; then
         cmd+=(--model "$MODEL")
     fi
+    if [[ -n "$REASONING" ]]; then
+        cmd+=(-c "model_reasoning_effort=$REASONING")
+    fi
     cmd+=(-)
 
     if ! printf "%s" "$prompt" | "${cmd[@]}"; then
@@ -257,6 +322,11 @@ while [[ "$#" -gt 0 ]]; do
             MODEL="$2"
             shift 2
             ;;
+        --reasoning)
+            [[ "$#" -ge 2 ]] || fail "Expected a reasoning level after --reasoning"
+            REASONING="$2"
+            shift 2
+            ;;
         --skiphuman)
             SKIP_HUMAN=1
             shift
@@ -283,6 +353,7 @@ done
 require_command python3
 
 normalize_model
+validate_reasoning
 
 MILESTONE="$(resolve_milestone_path "$MILESTONE")" || fail "Milestone directory not found: $MILESTONE"
 [[ -f "$EXECUTOR_PROMPT" ]] || fail "Executor prompt not found: $EXECUTOR_PROMPT"
@@ -311,6 +382,11 @@ if [[ -n "$MODEL" ]]; then
     echo "  model: $MODEL"
 else
     echo "  model: Codex CLI default"
+fi
+if [[ -n "$REASONING" ]]; then
+    echo "  reasoning: $REASONING"
+else
+    echo "  reasoning: Codex CLI default"
 fi
 if [[ "$STEP_LIMIT" -eq 0 ]]; then
     echo "  steps: all pending steps"
