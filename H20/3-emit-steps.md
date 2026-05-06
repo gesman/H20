@@ -6,13 +6,14 @@ Agent-only instruction file for H20 stage 3. Use it to compile a milestone's `TA
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as step-emitter input.
-- If exactly one milestone directory is present, use it and read `<milestone>/TASK.md` plus `<milestone>/MASTER-PLAN.md`; also read `<milestone>/raw-prompt.txt` if present as a source-fidelity reference.
+- If exactly one milestone directory is present, use it as the target milestone; after the locked-milestone check, read `<milestone>/TASK.md`, `<milestone>/MASTER-PLAN.md`, and any `<milestone>/raw-prompt.txt` source-fidelity reference.
 - If exactly one `TASK.md` file is present, infer the milestone directory as that file's parent and use it.
 - If exactly one `MASTER-PLAN.md` file is present, infer the milestone directory as that file's parent and use it.
-- If exactly one `BLOCKED.md` file is present, it must belong to the same milestone directory you resolved from the input. Read it in addition to `TASK.md` and `MASTER-PLAN.md`.
+- If exactly one `BLOCKED.md` file is present, it must belong to the same milestone directory you resolved from the input. If the milestone is not locked, read it in addition to `TASK.md` and `MASTER-PLAN.md`.
 - If multiple candidate milestone directories, `TASK.md` files, or `MASTER-PLAN.md` files are present, STOP and ask the user which milestone is the source of truth.
 - If multiple `BLOCKED.md` files are present, or the `BLOCKED.md` points at a different milestone than the resolved one, STOP and ask the user which blocker file should be used.
 - If no input is present, STOP and ask for a milestone directory, `TASK.md`, or `MASTER-PLAN.md` path.
+- After resolving the milestone directory, if `<milestone>/_LOCKED.md` exists, STOP immediately and report `Milestone is locked: <milestone>/_LOCKED.md`. Do not read `TASK.md`, `MASTER-PLAN.md`, `raw-prompt.txt`, `BLOCKED.md`, or any other milestone artifact.
 - The input is stage-3 source material only. Do not execute implementation work or answer with a decomposition memo instead of writing roadmap / step artifacts.
 
 ---
@@ -31,7 +32,9 @@ State assumptions explicitly. If the task and master plan still permit two mater
 
 - A milestone directory path, e.g. `./H20/01-<kebab>/`, or a direct path to `TASK.md` / `MASTER-PLAN.md` inside a milestone directory.
 - Optional: a direct path to `<milestone>/BLOCKED.md` when re-emitting after a blocked execution.
-- Resolve the milestone directory first, then read `<milestone>/TASK.md` and `<milestone>/MASTER-PLAN.md`.
+- Resolve the milestone directory first.
+- If `<milestone>/_LOCKED.md` exists, STOP immediately and report `Milestone is locked: <milestone>/_LOCKED.md`. This hard stop takes precedence over `BLOCKED.md`, existing steps, done-files, and any user intent to re-emit.
+- Read `<milestone>/TASK.md` and `<milestone>/MASTER-PLAN.md`.
 - If `<milestone>/raw-prompt.txt` exists, read it after `TASK.md` and `MASTER-PLAN.md` as a source-fidelity reference. Use it only to preserve exact literals for scope already present in `TASK.md` or `MASTER-PLAN.md`, not to add fresh scope or strategy.
 - If `MASTER-PLAN.md` is missing, STOP and tell the user to run `2-generate-master-plan.md`.
 - If `BLOCKED.md` was provided, read it after `TASK.md` and `MASTER-PLAN.md`. Treat it as authoritative execution-stage evidence about why the existing step chain needs adjustment. It is recovery context, not new product scope by itself.
@@ -153,4 +156,4 @@ On full verification pass, write `STEP-02--DONE.md` in this directory per the RE
 
 ---
 
-3-emit-steps.md — end. Contract: ./H20/CONTRACT.md § Schemas
+3-emit-steps.md — end. Contract: ./H20/CONTRACT.md § Schemas, § Locked milestones

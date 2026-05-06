@@ -128,6 +128,9 @@ else
     fail "Target not found as milestone dir or step file: $TARGET"
 fi
 
+LOCKED_FILE="$MILESTONE/_LOCKED.md"
+[[ ! -f "$LOCKED_FILE" ]] || fail "Milestone is locked: $LOCKED_FILE"
+
 FILES=()
 [[ -f "$MILESTONE/TASK.md" ]] && FILES+=("$MILESTONE/TASK.md")
 [[ -f "$MILESTONE/MASTER-PLAN.md" ]] && FILES+=("$MILESTONE/MASTER-PLAN.md")

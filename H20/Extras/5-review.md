@@ -6,11 +6,12 @@ Agent-only instruction file for H20 review stage. Use it to review exactly one c
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as review control input.
-- If exactly one completed milestone directory is present, review that milestone.
-- If exactly one completed `STEP-NN--*.md` file is present, review that completed step.
+- If exactly one completed milestone directory is present, use it as the review target.
+- If exactly one completed `STEP-NN--*.md` file is present, use that completed step as the review target.
 - If both a milestone directory and a step file are present and they point to the same milestone, STOP and ask the user whether to review the full milestone or only the step.
 - If multiple candidate milestone directories or multiple candidate step files are present, STOP and ask the user which one to review.
 - If no review target is present, STOP and ask for a completed milestone directory or completed step file.
+- After resolving the owning milestone, if `<milestone>/_LOCKED.md` exists, STOP immediately and report `Milestone is locked: <milestone>/_LOCKED.md`. Do not read `TASK.md`, done-files, step files, seeded concerns, or any other artifact.
 - Treat everything else after the review target as optional seeded review concerns.
 - Seeded concerns may be pasted free text, one or more referenced text files, or both.
 - The review control input is review-stage input only. Do not execute implementation work, modify milestone state, or create a second completion marker.
@@ -38,16 +39,17 @@ Run the six phases below in order. Do not merge them.
    - a milestone directory `./H20/NN-<kebab>/`; or
    - a step file `./H20/NN-<kebab>/STEP-NN--<kebab>.md`.
 2. Resolve the owning milestone directory.
-3. Resolve the project root as the parent of the `H20/` directory that owns the milestone.
-4. Resolve the review output directory as:
+3. If the owning milestone contains `_LOCKED.md`, STOP immediately and report `Milestone is locked: <milestone>/_LOCKED.md`. The lock takes precedence over review requests, done-files, seeded concerns, and any other intent.
+4. Resolve the project root as the parent of the `H20/` directory that owns the milestone.
+5. Resolve the review output directory as:
    - `./H20/Reviews/<owning-milestone-dir-name>/`
-5. Pick the next free review number local to that review output directory:
+6. Pick the next free review number local to that review output directory:
    - `01` if no prior review artifacts exist;
    - otherwise `max(existing review numbers) + 1`.
-6. The output pair must be:
+7. The output pair must be:
    - `REVIEW-NN.md`
    - `raw-review-prompt-NN.md`
-7. Build a seeded-concerns list from any optional review hints that accompanied the target:
+8. Build a seeded-concerns list from any optional review hints that accompanied the target:
    - preserve the original wording where possible;
    - if a seeded concern came from a referenced file, read that file and include each distinct concern it contains;
    - if no seeded concerns were supplied, record that explicitly.
@@ -233,6 +235,7 @@ End with a compact handoff:
 ## Anti-footgun rules
 
 - Do not mutate any existing milestone artifacts.
+- Do not review or inspect a milestone that contains `_LOCKED.md`; report the lock and stop.
 - Do not create or delete `STEP-NN--DONE.md`, `BLOCKED.md`, `TASK.md`, `MASTER-PLAN.md`, or `ROADMAP.md`.
 - Do not create a second completion marker for milestones.
 - Do not overwrite earlier review snapshots or follow-up prompts.

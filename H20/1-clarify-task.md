@@ -7,6 +7,7 @@ Agent-only instruction file for H20 stage 1. Use it to synthesize the next miles
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as raw input regarding the desired thing to build.
 - Build a single **raw input corpus** from all provided sources.
+- Before reading a provided file or directory, determine whether it is an H20 milestone directory or sits inside one. If its owning milestone contains `_LOCKED.md`, STOP immediately and report `Milestone is locked: <path>/_LOCKED.md`. Do not read any other file from that milestone or use it as source material.
 - If a provided source is a file, read it as part of the corpus.
 - If a provided source is a directory, read all readable text files under it recursively in stable sorted path order and include each in the corpus. Ignore binary files. If the directory contains no readable text files, STOP and say so.
 - If both referenced artifacts and pasted freeform text are present, include both in the corpus.
@@ -218,4 +219,4 @@ Fill this in when writing `./H20/NN-<kebab>/TASK.md`. Omit optional sections whe
 
 ---
 
-1-clarify-task.md — end. Contract: ./H20/CONTRACT.md § Schemas
+1-clarify-task.md — end. Contract: ./H20/CONTRACT.md § Schemas, § Locked milestones

@@ -21,7 +21,7 @@ Notes:
 - Autoexec runs pass literal control lines into `4-execute-step.md`:
   - `AUTOEXEC_MODE=1`
   - `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used
-- Autoexec still honors H20 recovery semantics. `BLOCKED.md` stops the loop. Missing done-file creation after a run is treated as a handoff / stop condition.
+- Autoexec still honors H20 recovery semantics. `_LOCKED.md` hard-stops before dry-run or live execution. `BLOCKED.md` stops the loop. Missing done-file creation after a run is treated as a handoff / stop condition.
 - Autoexec `--dry-run` prints the resolved milestone and selected pending steps without launching the agent or writing files.
 
 `1-clarify-task-assume-defaults.md` usage:
@@ -41,6 +41,7 @@ Notes:
 - `3a-env-checker <milestone-dir>`: scans unfinished steps inside that milestone
 - `3a-env-checker <step-file>`: scans that specific step file
 - accepted path styles include `./H20/01-my-feature`, `./01-my-feature`, and direct `STEP-NN--*.md` paths
+- if the owning milestone contains `_LOCKED.md`, the checker stops without scanning milestone files
 
 `5-review.md` usage:
 
@@ -53,6 +54,7 @@ Notes:
   - `@H20/Extras/5-review.md @H20/05-my-milestone/ @other-concerns.txt`
 - do not use a bare path like `H20/Extras/5-review.md` and expect the agent to load it; use `@...` or paste the file contents
 - accepted use case: independent review of completed milestone outputs or one completed step's outputs
+- if the owning milestone contains `_LOCKED.md`, review stops before reading milestone artifacts or seeded concerns
 - done-files define review scope, but findings and clearances must come from inspected artifacts, concrete recorded verification, or fresh read-only checks when available
 - seeded concerns are review hints only; they do not redefine review scope
 - output: immutable review artifact pairs under `./H20/Reviews/<milestone>/`, such as `REVIEW-01.md` and `raw-review-prompt-01.md`
@@ -63,6 +65,7 @@ Notes:
 - no args: prints color-coded syntax help
 - `4-autoexec-claude --milestone <milestone-dir>`: loops Claude Code over pending steps inside that milestone
 - accepted path styles include `./H20/01-my-feature` and `./01-my-feature`
+- if the milestone contains `_LOCKED.md`, the wrapper stops before dry-run or live execution
 - optional flags:
   - `--steps N`: stop after N steps
   - `--model sonnet|opus|<full-model>`: override the Claude Code model; default is `opus`
@@ -75,6 +78,7 @@ Notes:
 - no args: prints color-coded syntax help
 - `4-autoexec-codex --milestone <milestone-dir>`: loops Codex over pending steps inside that milestone
 - accepted path styles include `./H20/01-my-feature` and `./01-my-feature`
+- if the milestone contains `_LOCKED.md`, the wrapper stops before dry-run or live execution
 - optional flags:
   - `--steps N`: stop after N steps
   - `--model <model-id>`: override the Codex CLI default model for this run; the current tested explicit model is `gpt-5.5`

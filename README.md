@@ -31,14 +31,14 @@ The core prompt files under `./H20/` are agent-only instruction files. User-faci
 
    `./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.5 --reasoning xhigh --skiphuman [--steps 2]`
 
-   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending step(s), pass `AUTOEXEC_MODE=1`, and stop on `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected steps without launching the agent.
+   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending step(s), pass `AUTOEXEC_MODE=1`, and stop on `_LOCKED.md`, `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected steps without launching the agent.
 
 ## Why H20
 
 - **Context rot is the silent killer of complex projects, and H20 is built around defeating it.** Big goals die when one bloated session has to hold the whole product in its head. H20 shards work into milestones, then into execution steps, and demands a fresh context window at every stage boundary. Each step carries forward only the immediately prior done-file — a hand-written summary, not a conversation replay.
 - **The what and the how are now separate artifacts.** `TASK.md` captures the cleaned, agreed "what". `MASTER-PLAN.md` captures the reviewed per-milestone "how" before any `STEP-NN` files exist. Larger work gets an explicit strategy checkpoint instead of jumping straight from a task brief into many executable files.
 - **Pick the right agent for the right step.** The core prompts use no agent-specific syntax, so a single milestone can flow across tools: scaffold the backend in Codex, design the UI in Claude Code, hand a tricky migration to Aider, verify in Cursor. Every handoff is just "paste the executor prompt into a different agent and name the next step file."
-- **The harness stays lean.** The entire completion state machine is still file existence: a step is done iff `STEP-NN--DONE.md` exists. If H20 ever stops being useful to you, `rm -rf H20/` deletes it without trace. Nothing about your project depends on it.
+- **The harness stays lean.** The completion state machine is still file existence: a step is done iff `STEP-NN--DONE.md` exists. `_LOCKED.md` is a separate hard-stop state marker, not completion. If H20 ever stops being useful to you, `rm -rf H20/` deletes it without trace. Nothing about your project depends on it.
 
 ## Design axioms
 
@@ -129,6 +129,7 @@ Inside a target project using H20:
 │   ├── TASK.md
 │   ├── MASTER-PLAN.md
 │   ├── ROADMAP.md
+│   ├── _LOCKED.md                (optional; locks this milestone against all H20 work)
 │   ├── BLOCKED.md                 (optional; only when a blocked execution writes it)
 │   ├── STEP-01--<kebab>.md
 │   ├── STEP-01--DONE.md           (only after successful execution)
@@ -148,6 +149,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - **Task brief:** always exactly `TASK.md`.
 - **Master plan:** always exactly `MASTER-PLAN.md`.
 - **Roadmap:** always exactly `ROADMAP.md`.
+- **Locked milestone marker:** optional milestone-root `_LOCKED.md`. Empty is valid; any contents are optional human context only.
 - **Steps:** `STEP-NN--<kebab>.md`, NN `01`..`99`, zero-padded.
 - **Done-files:** `STEP-NN--DONE.md` — no title suffix, so existence check is trivial.
 - **Blocked handoff:** optional milestone-root `BLOCKED.md`. At most one unresolved blocker file per milestone.
@@ -242,9 +244,15 @@ Done-files may define review scope, but they are not correctness evidence. Revie
 - `## Constraints` — explicit scope fences, assumptions, and boundaries for the next milestone.
 - `## Success criteria` — bulleted, verifiable outcomes expected from the follow-up milestone.
 
+## Locked milestones
+
+A milestone-root `_LOCKED.md` is a state marker. Its presence means the milestone is inactive, incomplete, no longer needs H20 work, and must be ignored by H20 agents. The file may be empty. Any text inside is optional human context and is not part of the contract schema.
+
+If `_LOCKED.md` exists, every H20 stage and helper must hard-stop before reading or modifying any other artifact in that milestone. The only allowed read is `_LOCKED.md` itself, solely to report a brief message. `_LOCKED.md` is not a completion marker, does not satisfy prerequisites, is not recoverable blocker context, and takes precedence over `BLOCKED.md`, done-files, review requests, autoexec flags, and any other intent. To unlock a milestone, delete `_LOCKED.md` manually.
+
 ## Recovery rule
 
-Before executing `STEP-NN--<kebab>.md`, check if the sibling `STEP-NN--DONE.md` exists in the same milestone directory. If yes, stop and report `STEP-NN already executed`. If no, execute. To re-run a step, **delete its done-file** manually. That is the entire recovery mechanism. `BLOCKED.md` never marks a step complete and does not alter the done-file recovery rule; it is only a user-directed handoff artifact.
+After confirming the milestone is not locked, before executing `STEP-NN--<kebab>.md`, check if the sibling `STEP-NN--DONE.md` exists in the same milestone directory. If yes, stop and report `STEP-NN already executed`. If no, execute. To re-run a step, **delete its done-file** manually. That is the entire recovery mechanism. `BLOCKED.md` never marks a step complete and does not alter the done-file recovery rule; it is only a user-directed handoff artifact.
 
 ## Interrupted runs
 
@@ -258,7 +266,7 @@ Do **not** use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks,
 
 `BLOCKED.md` is consumed only when the user explicitly passes it into `3-emit-steps.md`, `2-generate-master-plan.md`, or `1-clarify-task.md`. Its presence on disk alone does not auto-replan anything.
 
-After the user chooses a recovery path and materializes it, delete `BLOCKED.md`. If the milestone is abandoned entirely, keeping `BLOCKED.md` as a tombstone is fine.
+After the user chooses a recovery path and materializes it, delete `BLOCKED.md`. If the milestone is abandoned entirely, create `_LOCKED.md`; keeping `BLOCKED.md` as extra context is fine, but `_LOCKED.md` is the state marker.
 
 ## Optional executor overlays
 
@@ -267,7 +275,7 @@ Optional convenience wrappers may append literal control lines after the step pa
 - `AUTOEXEC_MODE=1` — executor capability assessment must use any already-available capabilities without pausing; if a required capability is missing or failing and no safe fallback exists, the executor should write `BLOCKED.md` and stop.
 - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this explicit marker, human-only verification still pauses for user input even in autoexec mode.
 
-These overlays do **not** change the done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
+These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
 
 ## Using H20 on a project
 
@@ -317,6 +325,8 @@ Example:
 
 Purpose: scan a milestone or one specific step file and print a manual checklist of likely environment capabilities worth validating before execution. It does **not** inspect your actual agent runtime, installed MCPs, or plugins.
 
+If the target milestone contains `_LOCKED.md`, the checker stops without scanning milestone files.
+
 Syntax:
 
 ```bash
@@ -330,6 +340,8 @@ Syntax:
 
 Purpose: Claude Code wrapper that executes the next pending H20 step(s) for one milestone in a loop using the current user's Claude subscription login.
 
+If the milestone contains `_LOCKED.md`, the wrapper stops before dry-run or live execution.
+
 Syntax:
 
 ```bash
@@ -340,6 +352,8 @@ Syntax:
 
 Purpose: Codex CLI wrapper that executes the next pending H20 step(s) for one milestone in a loop using the current user's Codex login.
 
+If the milestone contains `_LOCKED.md`, the wrapper stops before dry-run or live execution.
+
 Syntax:
 
 ```bash
@@ -349,6 +363,8 @@ Syntax:
 ### 5-review
 
 Purpose: run an independent review of code, schemas, tests, and logic produced by a completed step or milestone, then write two immutable artifacts under `./H20/Reviews/`: a human-facing review snapshot and a machine-facing follow-up raw prompt. This helper is non-core by design and does **not** create a second completion state for milestones.
+
+If the reviewed milestone contains `_LOCKED.md`, review stops before reading milestone artifacts or seeded concerns.
 
 Syntax:
 

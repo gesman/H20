@@ -6,9 +6,10 @@ Agent-only instruction file for H20 stage 4. Use it to execute exactly one `STEP
 
 - Treat this file as the instruction set.
 - Treat the material supplied after this file, or after an explicit operator handoff telling you to read this file from disk, as executor input.
-- If exactly one `STEP-NN--*.md` file is present, execute that step.
+- If exactly one `STEP-NN--*.md` file is present, use it as the target step.
 - If multiple candidate step files are present, STOP and ask the user which one to execute.
 - If no step file is present, STOP and ask for one.
+- After resolving the target step's milestone directory, if `<milestone>/_LOCKED.md` exists, STOP immediately and report `Milestone is locked: <milestone>/_LOCKED.md`. Do not read the step, done-file, or any other milestone artifact.
 - Optional execution overlays may also be present as literal control lines after the step path:
   - `AUTOEXEC_MODE=1` — an unattended wrapper is driving this run.
   - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be waived automatically for this run.
@@ -24,9 +25,17 @@ Run the eight phases below **in order**. Phase 1 must be first — it short-circ
 
 ---
 
-## Phase 1. Recovery check
+## Phase 1. Locked milestone and recovery check
 
-Look for `STEP-NN--DONE.md` in the same directory as the step file you were given. If it exists, emit exactly:
+Look for `_LOCKED.md` in the same directory as the step file you were given. If it exists, emit exactly:
+
+```text
+Milestone is locked: <path>/_LOCKED.md
+```
+
+...and **stop**. Do NOT read the step, the done-file, or anything else. The lock takes precedence over done-files, `BLOCKED.md`, `AUTOEXEC_MODE=1`, `AUTOEXEC_SKIP_HUMAN=1`, and any user intent to execute.
+
+If no lock exists, look for `STEP-NN--DONE.md` in the same directory as the step file you were given. If it exists, emit exactly:
 
 ```text
 STEP-NN already executed. See <path>.
@@ -185,7 +194,7 @@ If this was the last step, say so explicitly and still recommend clearing contex
 
 - Never write a done-file for a failed or partial run. A done-file is a completion certificate; writing one falsely poisons the chain.
 - Never write both `BLOCKED.md` and `STEP-NN--DONE.md` for the same run.
-- Never skip the recovery check because "the step clearly hasn't been run". Always check the file system.
+- Never skip the locked milestone check or recovery check because "the step clearly hasn't been run". Always check the file system. `_LOCKED.md` wins over all other executor intents.
 - Never silently continue on suspected partial state. If deliverables already exist without a done-file, stop and ask.
 - Never push commits. Local commits only.
 - Never silently choose between materially different interpretations.
@@ -204,4 +213,4 @@ If this was the last step, say so explicitly and still recommend clearing contex
 
 ---
 
-4-execute-step.md — end. Contract: ./H20/CONTRACT.md § Schemas, § Recovery rule
+4-execute-step.md — end. Contract: ./H20/CONTRACT.md § Schemas, § Locked milestones, § Recovery rule

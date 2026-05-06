@@ -104,6 +104,7 @@ ${BOLD}Behavior${RESET}
   ${GREEN}runs are ephemeral by default${RESET}
   ${GREEN}--dry-run prints the live-mode milestone and selected steps without launching Codex${RESET}
   ${GREEN}capability requests are handled non-interactively via AUTOEXEC_MODE=1${RESET}
+  ${GREEN}_LOCKED.md hard-stops before dry-run or live execution${RESET}
   ${GREEN}BLOCKED.md stops the loop immediately${RESET}
   ${GREEN}missing done-file after a run is treated as a handoff / stop${RESET}
 
@@ -358,7 +359,14 @@ validate_reasoning
 MILESTONE="$(resolve_milestone_path "$MILESTONE")" || fail "Milestone directory not found: $MILESTONE"
 [[ -f "$EXECUTOR_PROMPT" ]] || fail "Executor prompt not found: $EXECUTOR_PROMPT"
 
+LOCKED_FILE="$MILESTONE/_LOCKED.md"
 BLOCKED_FILE="$MILESTONE/BLOCKED.md"
+
+if [[ -f "$LOCKED_FILE" ]]; then
+    warn "${BOLD}Milestone is locked:${RESET}${YELLOW} $LOCKED_FILE${RESET}"
+    exit 1
+fi
+
 if [[ "$DRY_RUN" -eq 1 ]]; then
     dry_run_preview
     exit 0
@@ -404,6 +412,12 @@ echo "  session persistence: ephemeral"
 echo "  workspace root: $PROJECT_ROOT"
 
 while true; do
+    if [[ -f "$LOCKED_FILE" ]]; then
+        warn ""
+        warn "${BOLD}Milestone is locked:${RESET}${YELLOW} $LOCKED_FILE${RESET}"
+        exit 1
+    fi
+
     if [[ -f "$BLOCKED_FILE" ]]; then
         warn ""
         warn "${BOLD}BLOCKED.md detected${RESET}${YELLOW} — loop stopped${RESET}"
@@ -432,6 +446,12 @@ while true; do
     if ! run_codex_for_step "$PROMPT"; then
         warn ""
         warn "${BOLD}Codex exited unsuccessfully${RESET}${YELLOW} — stopping for inspection${RESET}"
+        exit 1
+    fi
+
+    if [[ -f "$LOCKED_FILE" ]]; then
+        warn ""
+        warn "${BOLD}Milestone is locked:${RESET}${YELLOW} $LOCKED_FILE${RESET}"
         exit 1
     fi
 

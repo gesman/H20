@@ -33,6 +33,7 @@ Inside a target project using H20:
 │   ├── TASK.md
 │   ├── MASTER-PLAN.md
 │   ├── ROADMAP.md
+│   ├── _LOCKED.md
 │   ├── BLOCKED.md
 │   ├── STEP-01--<kebab>.md
 │   ├── STEP-01--DONE.md
@@ -52,6 +53,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - Task brief: `TASK.md`.
 - Master plan: `MASTER-PLAN.md`.
 - Roadmap: `ROADMAP.md`.
+- Locked milestone marker: optional milestone-root `_LOCKED.md`. Empty is valid; any contents are optional human context only.
 - Steps: `STEP-NN--<kebab>.md`.
 - Done-files: `STEP-NN--DONE.md`.
 - Blocked handoff: optional milestone-root `BLOCKED.md`.
@@ -146,9 +148,15 @@ Done-files may define review scope, but they are not correctness evidence. Revie
 - `## Constraints` — explicit scope fences, assumptions, and boundaries for the next milestone.
 - `## Success criteria` — bulleted, verifiable outcomes expected from the follow-up milestone.
 
+## Locked milestones
+
+A milestone-root `_LOCKED.md` is a state marker. Its presence means the milestone is inactive, incomplete, no longer needs H20 work, and must be ignored by H20 agents. The file may be empty. Any text inside is optional human context and is not part of the contract schema.
+
+If `_LOCKED.md` exists, every H20 stage and helper must hard-stop before reading or modifying any other artifact in that milestone. The only allowed read is `_LOCKED.md` itself, solely to report a brief message. `_LOCKED.md` is not a completion marker, does not satisfy prerequisites, is not recoverable blocker context, and takes precedence over `BLOCKED.md`, done-files, review requests, autoexec flags, and any other intent. To unlock a milestone, delete `_LOCKED.md` manually.
+
 ## Recovery rule
 
-Before executing `STEP-NN--<kebab>.md`, check whether the sibling `STEP-NN--DONE.md` exists in the same milestone directory. If it exists, stop and report `STEP-NN already executed`. If it does not, execute. To rerun a step, delete its done-file manually. That is the entire recovery mechanism.
+After confirming the milestone is not locked, before executing `STEP-NN--<kebab>.md`, check whether the sibling `STEP-NN--DONE.md` exists in the same milestone directory. If it exists, stop and report `STEP-NN already executed`. If it does not, execute. To rerun a step, delete its done-file manually. That is the entire recovery mechanism.
 
 `BLOCKED.md` never marks a step complete and does not alter the done-file recovery rule.
 
@@ -164,7 +172,7 @@ Do not use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks, sus
 
 `BLOCKED.md` is consumed only when the user explicitly passes it into `3-emit-steps.md`, `2-generate-master-plan.md`, or `1-clarify-task.md`. Its presence on disk alone does not auto-replan anything.
 
-After the user chooses a recovery path and materializes it, delete `BLOCKED.md`. If the milestone is abandoned entirely, keeping `BLOCKED.md` as a tombstone is fine.
+After the user chooses a recovery path and materializes it, delete `BLOCKED.md`. If the milestone is abandoned entirely, create `_LOCKED.md`; keeping `BLOCKED.md` as extra context is fine, but `_LOCKED.md` is the state marker.
 
 ## Optional executor overlays
 
@@ -173,4 +181,4 @@ Optional convenience wrappers may append literal control lines after the step pa
 - `AUTOEXEC_MODE=1` — executor capability assessment must use any already-available capabilities without pausing; if a required capability is missing or failing and no safe fallback exists, the executor should write `BLOCKED.md` and stop.
 - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this marker, human-only verification still pauses for user input even in autoexec mode.
 
-These overlays do not change the done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
+These overlays do not change the `_LOCKED.md` hard stop, done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
