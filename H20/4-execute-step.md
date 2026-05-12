@@ -57,8 +57,12 @@ This is literally the first action. Not a pre-flight advisory — phase 1.
 - Before touching code, print:
   - explicit assumptions you are relying on from the step, `TASK.md`, `MASTER-PLAN.md`, prior done-file, or codebase;
   - one brief execution outline in the form `1. <action> -> verify: <check>`.
-- If the workspace is already dirty in files unrelated to this step, STOP and ask the user how to proceed.
-- If no done-file exists but one or more step deliverables already exist or are modified, treat it as a suspected partial run. STOP and ask the user whether to inspect, clean up, or intentionally continue. Do not bulldoze through partial state.
+- If the workspace is already dirty in files unrelated to this step, STOP and ask the user how to proceed. If `AUTOEXEC_MODE=1` is present, write milestone-root `BLOCKED.md` using the `BLOCKED.md` schema instead of asking, then stop. Include current workspace status, concrete evidence, why the unrelated changes make autoexec unsafe, and 2 or 3 recovery options with exactly one recommended option when possible.
+- If no done-file exists but the workspace or deliverables show possible partial state, run a recovery assessment before executing. Mere existence of a deliverable path is not partial state when the step is expected to modify an existing file.
+  - Inspect relevant workspace status, diffs, declared deliverables, and file contents against the step, `TASK.md`, and `MASTER-PLAN.md`.
+  - If the state is coherent and in scope, state the recovery assumption, continue from the current state, and still run Phase 5 verification before writing the done-file. If the deliverables already satisfy the step, skip directly to verification.
+  - If the state is incomplete but safely recoverable, continue with the minimum remaining actions.
+  - If the state is ambiguous, unrelated, or unsafe to resume, write milestone-root `BLOCKED.md` using the `BLOCKED.md` schema, then stop. Include current workspace status, concrete evidence, why recovery is unsafe, and 2 or 3 recovery options with exactly one recommended option when possible.
 
 ---
 
@@ -116,7 +120,7 @@ While executing:
 - `BLOCKED.md` must recommend 2 or 3 concrete user actions, mark exactly one as recommended, and name the exact next move for each option.
 - The earliest safe recovery point recorded in `BLOCKED.md` must never be a later step while the current step has no done-file. Recovery starts at the current step unless the user chooses to abandon or supersede the milestone.
 - After writing `BLOCKED.md`, stop immediately. Do not continue into verification. Do not write a done-file. Do not commit.
-- Do not write `BLOCKED.md` for ordinary clarifying questions, dirty-worktree checks, suspected partial state, or human-only verification pauses already covered elsewhere in this prompt.
+- Do not write `BLOCKED.md` for ordinary clarifying questions, interactive dirty-worktree checks, safely recoverable partial state, or human-only verification pauses already covered elsewhere in this prompt. Do write `BLOCKED.md` when suspected partial state is ambiguous, unrelated, or unsafe to resume, and when `AUTOEXEC_MODE=1` cannot safely proceed because unrelated dirty files require human choice.
 
 **Best-effort tests — do not ask the user.** As part of this execution (not a separate step, not a separate action), add lightweight tests for the code you produce, even when the step's `## Verification` section does not call for them. The bar is **smoke-level confidence** that the deliverable works — not full coverage. Pick the idiomatic framework for the stack (pytest for Python, vitest/jest for Node, `go test` for Go, Playwright smoke for browser UIs, a single `curl` + assertion for HTTP endpoints, etc.).
 
@@ -195,7 +199,7 @@ If this was the last step, say so explicitly and still recommend clearing contex
 - Never write a done-file for a failed or partial run. A done-file is a completion certificate; writing one falsely poisons the chain.
 - Never write both `BLOCKED.md` and `STEP-NN--DONE.md` for the same run.
 - Never skip the locked milestone check or recovery check because "the step clearly hasn't been run". Always check the file system. `_LOCKED.md` wins over all other executor intents.
-- Never silently continue on suspected partial state. If deliverables already exist without a done-file, stop and ask.
+- Never silently continue on suspected partial state. Inspect first, state the recovery assumption, resume only when the state is coherent and in scope, and write `BLOCKED.md` when recovery is ambiguous or unsafe.
 - Never push commits. Local commits only.
 - Never silently choose between materially different interpretations.
 - Never point `BLOCKED.md` recovery at `STEP-(N+1)` or later while the current step is incomplete.

@@ -103,7 +103,9 @@ ${BOLD}Behavior${RESET}
   ${GREEN}sandbox defaults to --sandbox danger-full-access${RESET}
   ${GREEN}runs are ephemeral by default${RESET}
   ${GREEN}--dry-run prints the live-mode milestone and selected steps without launching Codex${RESET}
+  ${GREEN}dirty git worktrees stop before Codex is launched${RESET}
   ${GREEN}capability requests are handled non-interactively via AUTOEXEC_MODE=1${RESET}
+  ${GREEN}suspected partial runs are inspected and resumed when safe${RESET}
   ${GREEN}_LOCKED.md hard-stops before dry-run or live execution${RESET}
   ${GREEN}BLOCKED.md stops the loop immediately${RESET}
   ${GREEN}missing done-file after a run is treated as a handoff / stop${RESET}
@@ -217,6 +219,33 @@ selected_pending_steps() {
     done < <(find "$milestone" -maxdepth 1 -type f -name 'STEP-[0-9][0-9]--*.md' ! -name 'STEP-[0-9][0-9]--DONE.md' | sort)
 }
 
+report_dirty_worktree() {
+    local mode="$1"
+    local status
+
+    if ! git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        return 1
+    fi
+
+    status="$(git -C "$PROJECT_ROOT" status --short)"
+    if [[ -z "$status" ]]; then
+        return 1
+    fi
+
+    if [[ "$mode" == "dry-run" ]]; then
+        warn "${BOLD}Git worktree is dirty${RESET}${YELLOW} — live mode would stop before launching Codex${RESET}"
+    else
+        warn "${BOLD}Git worktree is dirty${RESET}${YELLOW} — stopping before launching Codex${RESET}"
+    fi
+    printf "  workspace: %s\n" "$PROJECT_ROOT"
+    printf "  fix: commit, stash, or discard unrelated changes, then rerun autoexec\n"
+    printf "  status:\n"
+    while IFS= read -r line; do
+        printf "    %s\n" "$line"
+    done <<< "$status"
+    return 0
+}
+
 build_prompt() {
     local step="$1"
     cat "$EXECUTOR_PROMPT"
@@ -265,6 +294,8 @@ dry_run_preview() {
         printf "  %s\n" "$BLOCKED_FILE"
         return 0
     fi
+
+    report_dirty_worktree "dry-run" || true
 
     echo ""
     echo "${BOLD}${MAGENTA}Steps live mode would attempt${RESET}"
@@ -372,13 +403,17 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
     exit 0
 fi
 
-require_command codex
-
 if [[ -f "$BLOCKED_FILE" ]]; then
     warn "${BOLD}BLOCKED.md already exists${RESET}${YELLOW} — stopping before any autoexec run${RESET}"
     printf "  %s\n" "$BLOCKED_FILE"
     exit 1
 fi
+
+if report_dirty_worktree "live"; then
+    exit 1
+fi
+
+require_command codex
 
 START_TS="$(date +%s)"
 RUNS=0

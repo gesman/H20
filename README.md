@@ -31,7 +31,7 @@ The core prompt files under `./H20/` are agent-only instruction files. User-faci
 
    `./H20/Extras/4-autoexec-codex --milestone ./H20/01-my-feature --model gpt-5.5 --reasoning xhigh --skiphuman [--steps 2]`
 
-   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending step(s), pass `AUTOEXEC_MODE=1`, and stop on `_LOCKED.md`, `BLOCKED.md`, missing done-file creation, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected steps without launching the agent.
+   These are non-core convenience scripts, not part of the H20 contract. They repeatedly invoke the next pending step(s), pass `AUTOEXEC_MODE=1`, and stop on dirty git worktrees, `_LOCKED.md`, `BLOCKED.md`, missing done-file creation, unrecoverable partial state, or a human-verification handoff. Add `--skiphuman` only when you want human-only checks recorded as skipped. Add `--dry-run` to preview the resolved milestone and selected steps without launching the agent.
 
 ## Why H20
 
@@ -256,13 +256,15 @@ After confirming the milestone is not locked, before executing `STEP-NN--<kebab>
 
 ## Interrupted runs
 
-H20 auto-recovers **completed** steps via done-files. It does **not** silently recover partial runs. If a coding agent crashed before writing `STEP-NN--DONE.md`, the next executor run should first check for workspace drift: already-created deliverables from the step, or unrelated dirty files in the worktree. If either is present, stop and ask the user whether to inspect, clean up, or intentionally continue. Do not bulldoze through suspected partial state.
+H20 auto-recovers **completed** steps via done-files. It also attempts graceful recovery for interrupted partial runs. If a coding agent crashed before writing `STEP-NN--DONE.md`, the next executor run should check for workspace drift using git status, relevant diffs, declared deliverables, and file contents. Mere existence of a deliverable path is not partial state when the step is expected to modify an existing file.
+
+If the partial state is coherent and in scope, the executor should state the recovery assumption, resume from the current state, run fresh verification, and write `STEP-NN--DONE.md` only on full pass. If recovery is ambiguous, unrelated, or unsafe, the executor should write milestone-root `BLOCKED.md` with current status, concrete evidence, block reasons, and 2 or 3 recovery options with exactly one recommended option when possible.
 
 ## Blocked runs
 
 If execution hits a durable blocker that makes the current step unsafe to complete, the executor should write milestone-root `BLOCKED.md` and stop without writing a done-file or making a commit. Durable blockers include invalidated step assumptions with no safe in-scope repair, missing external access or credentials, failed or unavailable capabilities or facilities with no safe fallback, or external constraints that change the implementation path.
 
-Do **not** use `BLOCKED.md` for ordinary clarifying chat, dirty-worktree checks, suspected partial-run detection, or planned human-only verification pauses already covered elsewhere in the executor flow.
+Do **not** use `BLOCKED.md` for ordinary clarifying chat, interactive dirty-worktree checks, safely recoverable partial-run detection, or planned human-only verification pauses already covered elsewhere in the executor flow. In unattended `AUTOEXEC_MODE=1`, write `BLOCKED.md` when unrelated dirty files or ambiguous partial state require a human recovery choice.
 
 `BLOCKED.md` is consumed only when the user explicitly passes it into `3-emit-steps.md`, `2-generate-master-plan.md`, or `1-clarify-task.md`. Its presence on disk alone does not auto-replan anything.
 
@@ -275,7 +277,7 @@ Optional convenience wrappers may append literal control lines after the step pa
 - `AUTOEXEC_MODE=1` — executor capability assessment must use any already-available capabilities without pausing; if a required capability is missing or failing and no safe fallback exists, the executor should write `BLOCKED.md` and stop.
 - `AUTOEXEC_SKIP_HUMAN=1` — human-only verification may be recorded as `⚠ skipped` after the executor performs all automatable setup. Without this explicit marker, human-only verification still pauses for user input even in autoexec mode.
 
-These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery rule, partial-run detection, blocker semantics, or milestone schemas.
+These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery rule, partial-run recovery assessment, blocker semantics, or milestone schemas.
 
 ## Using H20 on a project
 

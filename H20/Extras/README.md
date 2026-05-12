@@ -21,7 +21,7 @@ Notes:
 - Autoexec runs pass literal control lines into `4-execute-step.md`:
   - `AUTOEXEC_MODE=1`
   - `AUTOEXEC_SKIP_HUMAN=1` when `--skiphuman` is used
-- Autoexec still honors H20 recovery semantics. `_LOCKED.md` hard-stops before dry-run or live execution. `BLOCKED.md` stops the loop. Missing done-file creation after a run is treated as a handoff / stop condition.
+- Autoexec still honors H20 recovery semantics. `_LOCKED.md` hard-stops before dry-run or live execution. `BLOCKED.md` stops the loop. Dirty git worktrees stop before the agent is launched. Missing done-file creation after a run is treated as a handoff / stop condition. Suspected partial-run state is assessed by the executor: coherent in-scope partial output may be verified and resumed, while ambiguous or unsafe recovery writes `BLOCKED.md`.
 - Autoexec `--dry-run` prints the resolved milestone and selected pending steps without launching the agent or writing files.
 
 `1-clarify-task-assume-defaults.md` usage:
