@@ -69,6 +69,8 @@ raw prompt (verbal, pasted, or referenced source material)
     │
     │   Phase 4 — Grilling
     │     Ask 3–7 concrete clarification questions, up to 3 rounds.
+    │     Use source evidence first, challenge fuzzy terminology, and
+    │     probe ambiguous workflows with concrete scenarios.
     │
     │   Phase 5 — Writing
     │     Write:
@@ -77,8 +79,9 @@ raw prompt (verbal, pasted, or referenced source material)
     │
     ▼   paste 2-generate-master-plan.md + point at milestone
     │
-    │   LLM reads TASK.md and repo context, surfaces material
-    │   strategy choices if any, then writes:
+    │   LLM reads TASK.md, relevant repo context/docs, and source
+    │   fidelity references. It surfaces material strategy choices
+    │   if any, then writes:
     │       - MASTER-PLAN.md (reviewable per-milestone "how")
     │
     ▼   paste 3-emit-steps.md + point at milestone

@@ -115,6 +115,12 @@ Stop and wait. When the user replies, capture decisions. If the user says "you p
 
 After research (or skip), scan for remaining ambiguity across the full raw input corpus: goal, user type, scale/performance, success criteria, non-goals, constraints the user has not said aloud, anything research did not cover, and any contradictions between sources.
 
+Before asking, resolve anything the supplied sources or explicitly referenced repo files can answer directly. When inspecting a referenced repo path, apply the same `_LOCKED.md` check as for provided sources before reading it. Do not ask the user to restate facts that are already visible in source material; ask only when the available evidence is missing, contradictory, or would materially change the task brief.
+
+Push on language as well as scope. If the corpus uses vague, overloaded, or conflicting terms (`account`, `tenant`, `workspace`, `job`, `sync`, `done`, etc.), ask the user to choose the intended meaning or a canonical term. If project docs or code already define the concept differently, call out the conflict in the question instead of silently adopting either meaning.
+
+Use concrete scenario probes when relationships or workflow boundaries are fuzzy. Invent a small realistic example that forces the boundary to be clear, especially around ownership, permissions, lifecycle states, failure handling, or edge-case user intent.
+
 Treat requests to "test", "verify", "walk through", "click through", "check live", or do a "manual visual check" as requests for agent-operated verification by default. Do not offer or recommend a manual visual check, user walkthrough, `approved` gate, or `skip` gate for normal UI/API behavior when objective checks can judge it. Prefer commands, automated browser flows, API calls, screenshots, DOM checks, logs, or equivalent agent-runnable checks. Mark verification human-only only when the raw corpus explicitly asks for human UAT or subjective review, or when no reasonable agent-side tool or fallback can judge the result; record that reason in `TASK.md`.
 
 Print:
@@ -123,7 +129,7 @@ Print:
 ### I need to clarify the task before I write TASK.md. Please answer these:
 ```
 
-Ask **3 to 7 questions**. Batch them. Each question must be specific, not "tell me more about X". For each question, present 2–4 compact numbered or lettered options, each with one short tradeoff phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, always include **two separate lines**:
+Ask **3 to 7 questions**. Batch them, but order them by dependency: intent and terminology first, then scope boundaries, then verification details. If a downstream question depends on an unresolved upstream answer, hold it for the next round instead of asking a misleading conditional question. Each question must be specific, not "tell me more about X", and should make clear what downstream artifact or execution behavior the answer will change. For each question, present 2–4 compact numbered or lettered options, each with one short tradeoff phrase, and clearly mark exactly one option as `Recommended` when a clear default exists from the raw corpus. If there is no clear default, say so explicitly for that question (`No clear default — your call`). After the batch, always include **two separate lines**:
 
 - a neutral reply-format line, e.g. `"Reply format: 1B, 2A, 3 freeform"`;
 - a recommendation line.
@@ -172,6 +178,7 @@ Before writing, do a compact self-review of the artifact draft: schema sections 
 - If the user's answer to a clarifying question was "I don't know", write it under `## Open questions` in `TASK.md` — do not guess and do not block.
 - If `BLOCKED.md` is part of the corpus, use it to sharpen research and grilling, but do not let it silently expand the task beyond the user's raw prompt.
 - Never skip the research-need judgment. If you decide research is not needed, say so out loud in one line so the user can push back.
+- Do not import project-documentation work into stage 1 unless the user requested it. Existing glossaries, ADRs, specs, and code are evidence for better questions and `TASK.md` fidelity, not permission to create or update non-H20 artifacts.
 
 ---
 

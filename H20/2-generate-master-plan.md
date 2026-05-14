@@ -55,15 +55,17 @@ Read:
 - `raw-prompt.txt`, if present, only as a source-fidelity reference for exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions tied to `TASK.md` scope;
 - `BLOCKED.md` if provided;
 - repo-local instruction files, if present;
+- existing project documentation that bears on the task, such as `CONTEXT.md`, `CONTEXT-MAP.md`, nearby `docs/adr/` records, design docs, or specs named by `TASK.md`;
 - enough project files to understand the target stack, layout, and existing boundaries.
 
-Do not inspect the entire repo by default. Use focused file discovery (`rg --files`, manifests, package files, configs, existing routes/modules) to understand the surfaces named by `TASK.md`.
+Do not inspect the entire repo by default. Use focused file discovery (`rg --files`, manifests, package files, configs, existing routes/modules) to understand the surfaces named by `TASK.md`. If local docs or code already answer a strategy question, use that evidence instead of asking the user; ask only when the evidence is missing, contradictory, or would change architecture, sequencing, verification, or scope.
 
 Before moving on, print a compact summary:
 
 - milestone path;
 - task title / goal;
 - relevant existing project surfaces discovered;
+- relevant terminology, context docs, or ADRs considered;
 - execution-critical source literals preserved or explicitly superseded;
 - any blocker evidence included;
 - assumptions you are currently relying on.
@@ -82,6 +84,8 @@ Examples:
 - deciding whether a feature belongs in an existing service or a new package;
 - selecting a compatibility or rollout strategy that affects multiple steps.
 
+Challenge terminology and documented decisions while judging strategy. If `TASK.md` uses a term differently from project docs or code, or if an existing ADR constrains the obvious strategy, surface that as a strategy concern before planning.
+
 If no material strategy choices remain, print one line:
 
 ```text
@@ -96,9 +100,9 @@ If one or more choices remain, proceed to Phase 3.
 
 ## Phase 3 — Strategy options and user choice
 
-For each material strategy axis, research and reason enough to present a safe choice. Use live web search or official docs when available and when current library/platform facts matter. If live search is unavailable, say so and mark current-version claims as assumptions.
+For each material strategy axis, research and reason enough to present a safe choice. Use live web search or official docs when available and when current library/platform facts matter. Prefer repo evidence for project-specific architecture and terminology. If live search is unavailable, say so and mark current-version claims as assumptions.
 
-Present all axes at once as compact numbered choice cards. For each option, include exactly:
+Present all axes at once as compact numbered choice cards, ordered so upstream decisions come before decisions that depend on them. For each option, include exactly:
 
 - option name;
 - `Best for:` one short phrase;
@@ -128,9 +132,11 @@ Draft `MASTER-PLAN.md` privately, then run a compact self-audit before writing:
 
 - Does the strategy satisfy every `TASK.md` requirement and success criterion without shrinking scope?
 - Are implementation boundaries, data flow, and sequencing rationale explicit enough for a fresh agent to emit steps without guessing?
+- Does terminology match `TASK.md`, project docs, and code evidence, or are conflicts surfaced visibly?
 - Are risk mitigations concrete and tied to verification or step boundaries?
 - Is every requirement and success criterion represented in the coverage tables?
 - Are execution-critical source literals from `TASK.md` and any same-milestone `raw-prompt.txt` preserved in the strategy, coverage tables, or planner notes, or explicitly marked as superseded?
+- Are hard-to-reverse, surprising, or trade-off-heavy decisions recorded in the plan rationale or planner notes instead of hidden in unstated taste?
 - Are planning notes visible instead of hidden as silent assumptions?
 - Is the plan per-milestone, not a broad long-term roadmap?
 
@@ -171,6 +177,7 @@ If your runtime cannot read or write files, stop and say H20 expects a coding ag
 - Do not replace exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, or security exclusions with vague references like "from the plan" or "as needed". Preserve them in `MASTER-PLAN.md` where they affect execution, or explicitly explain the supersession.
 - Do not emit executable steps. Stage 2 owns strategy only.
 - Do not treat `BLOCKED.md` as permission to invent product scope.
+- Do not create or update project glossaries, ADRs, specs, or other non-H20 docs unless `TASK.md` explicitly requires it. Existing docs are planning evidence; `MASTER-PLAN.md` is where this stage records decisions.
 - Do not let implementation taste become scope creep. Prefer existing repo patterns and the smallest strategy that satisfies the task.
 - Do not bury uncertainty. If it matters to step shape, ask or record it in `## Planner notes`.
 - Do not write `MASTER-PLAN.md` with placeholders, `TBD`, or generic "best practices" filler.
