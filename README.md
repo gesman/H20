@@ -286,7 +286,7 @@ These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery 
 
 1. Copy `./H20/` into your project root. Files are ordered by name (`1-…`, `2-…`, `3-…`, `4-…`) so `ls ./H20/` shows the pipeline left to right.
 2. Gather raw source material. This can be one file, many files, a directory, pasted text, or any combination.
-3. Paste `1-clarify-task.md` into a coding agent, then your raw input corpus. The agent may recommend a tech/framework research phase, then it grills you. You get `raw-prompt.txt` and `TASK.md`.
+3. Paste `1-clarify-task.md` into a coding agent, then your raw input corpus. The agent may recommend a tech/framework research phase, then it grills you using source evidence first, explicit terminology checks, and concrete scenario probes for fuzzy workflows. You get `raw-prompt.txt` and `TASK.md`.
    Shortcuts for coding agents that support file references:
    `@H20/1-clarify-task.md @idea-notes.txt`
    `@H20/1-clarify-task.md @raw-prompt1.txt @raw-prompt2.txt`
@@ -294,7 +294,7 @@ These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery 
    If a blocked milestone needs a fresh task pass, include the previous raw prompt plus `BLOCKED.md`:
    `@H20/1-clarify-task.md @H20/01-my-feature/raw-prompt.txt @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 2. In most coding agents: `/clear`.
-4. Paste `2-generate-master-plan.md` into a coding agent and point it at the milestone dir or `TASK.md`. The agent reads repo-local instruction files if present, uses same-milestone `raw-prompt.txt` only as a source-fidelity reference for already-agreed scope, surfaces material strategy choices, and writes `MASTER-PLAN.md`.
+4. Paste `2-generate-master-plan.md` into a coding agent and point it at the milestone dir or `TASK.md`. The agent reads repo-local instruction files and task-relevant project docs if present, uses same-milestone `raw-prompt.txt` only as a source-fidelity reference for already-agreed scope, checks terminology and documented decisions against repo evidence, surfaces material strategy choices, and writes `MASTER-PLAN.md`.
    Shortcuts:
    `@H20/2-generate-master-plan.md @H20/01-my-feature/`
    `@H20/2-generate-master-plan.md @H20/01-my-feature/TASK.md`
@@ -319,6 +319,8 @@ These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery 
 ### 1-clarify-task-assume-defaults
 
 Purpose: non-core fast path for small, local, low-ambiguity tasks where conservative defaults are safer than an interactive research / grilling round. It writes normal milestone artifacts: `raw-prompt.txt` and `TASK.md`.
+
+It still uses supplied source evidence and explicitly referenced repo files where needed, but refuses the fast path if terminology, docs, or code evidence conflict in a way that would change scope.
 
 Example:
 

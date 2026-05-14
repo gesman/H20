@@ -64,6 +64,7 @@ Proceed only if **all** of the following are true:
 - The likely implementation does not require choosing a framework, runtime, platform, database, auth model, integration provider, or deployment target.
 - The request does not imply cross-cutting architecture, data-model changes, migrations, credentials, or external service access.
 - The user intent is specific enough that you can express it as a short set of testable requirements without asking clarifying questions.
+- The raw input and any explicitly referenced source files do not use vague, overloaded, or conflicting domain terms in a way that would change the task boundary.
 - Any defaults you need to make are conservative, local, and unlikely to surprise the user.
 
 If the request fails this gate, STOP and print:
@@ -88,14 +89,16 @@ Fast-path eligible — proceeding with conservative defaults and no interactive 
 Do **not** run a research phase. Do **not** ask clarifying questions. Instead:
 
 1. Extract the smallest plausible user intent from the raw input corpus.
-2. Infer only the minimum defaults needed to make the task executable.
-3. Record those defaults explicitly as assumptions.
+2. Resolve facts directly available in supplied sources or explicitly referenced repo files, applying the same `_LOCKED.md` check as provided sources before reading milestone-owned paths.
+3. Infer only the minimum defaults needed to make the task executable.
+4. Record those defaults explicitly as assumptions.
 
 Rules for assumptions:
 
 - Assumptions must narrow scope, not expand it.
 - Prefer the existing repo shape, naming, and implementation style over inventing new structure.
 - If the request names a route, page, component, file, selector, or path, keep scope exactly there unless the raw input clearly says otherwise.
+- If existing docs or code define a relevant term, use that definition only when it keeps the task narrow and unsurprising. If the source uses that term differently, refuse the fast path and route to core `./H20/1-clarify-task.md`.
 - Use non-goals aggressively to fence off adjacent work.
 - If one assumption would materially change behavior, touched area, architecture, or verification, STOP and route the user to core `./H20/1-clarify-task.md`.
 - Never write `## Open questions` in this mode. Either resolve the issue with a conservative assumption or refuse the fast path.

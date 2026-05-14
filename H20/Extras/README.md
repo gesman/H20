@@ -14,6 +14,7 @@ Current extras:
 Notes:
 
 - `1-clarify-task-assume-defaults.md` is still agent-agnostic, but it is intentionally a convenience shortcut rather than part of core H20. It writes normal milestone artifacts and may refuse broad or ambiguous requests.
+- Assume-defaults mode still reads supplied source evidence and explicitly referenced repo files when needed. If terminology, docs, or code evidence conflict in a way that would change scope, it refuses the fast path and routes to core `1-clarify-task.md`.
 - `4-autoexec-claude` is Claude-specific by design. It is a user convenience, not part of the core H20 payload.
 - `4-autoexec-codex` is Codex-specific by design. It is a user convenience, not part of the core H20 payload.
 - `5-review.md` is agent-agnostic in wording, but it is intentionally non-core. It does not modify milestone state and only writes review artifacts under `./H20/Reviews/`.

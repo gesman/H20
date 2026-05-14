@@ -70,16 +70,16 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - `## Context` — tech stack, target runtime, relevant existing code, users. Research-phase decisions land here.
 - `## Requirements` — numbered list. Each item is one testable requirement. Preserve execution-critical source literals such as exact commands, config blocks, env vars, ignore patterns, file/path lists, validation queries, rollback steps, and security exclusions, or state the accepted supersession explicitly.
 - `## Non-goals` — explicit scope exclusions.
-- `## Success criteria` — bulleted, verifiable.
-- `## Research notes` — optional; include only when the clarify-task research phase ran.
-- `## Open questions` — optional; include only when clarify-task could not close all gaps.
+- `## Success criteria` — bulleted, verifiable by command, test, observable behavior, API response, screenshot/DOM check, or equivalent.
+- `## Research notes` — optional; include only when the clarify-task research phase ran. Briefly record each decision axis researched, options considered, and the choice made.
+- `## Open questions` — optional; include only when clarify-task could not close all gaps. Omit entirely when empty.
 
 ### MASTER-PLAN.md schema
 
 - `# Master Plan: <milestone title>`
 - `## Task source` — path to this milestone's `TASK.md`.
-- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, exact source literals needed for execution, and key decisions.
-- `## Step outline` — ordered list of expected execution steps at the outcome level.
+- `## Strategy` — the reviewed per-milestone implementation approach: architecture, data flow, major boundaries, sequencing rationale, exact source literals needed for execution, and key decisions. This is the clean long "how".
+- `## Step outline` — ordered list of expected execution steps at the outcome level. These are not yet `STEP-NN` files, but they should be specific enough for `3-emit-steps.md` to compile mechanically.
 - `## Requirement coverage` — table with columns: `Requirement | Covered by | Notes`.
 - `## Success coverage` — table with columns: `Success criterion | Verification approach | Notes`.
 - `## Risks and mitigations` — concrete implementation risks, assumptions, and how steps should reduce or verify them.
@@ -90,7 +90,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 
 - `# Roadmap: <milestone title>`
 - `## Steps` — table with columns: `# | File | Goal | Depends on`.
-- `## Execution order` — linear list of step filenames in execution order.
+- `## Execution order` — linear list of step filenames in execution order. Mention parallelism only if steps are truly independent; default is sequential.
 - `## Emitter notes` — optional; only for real gaps that `TASK.md` or `MASTER-PLAN.md` did not address.
 
 ### STEP-NN--<kebab>.md schema
@@ -101,25 +101,25 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - `## Actions` — numbered list; each action small, specific, and verifiable.
 - `## Deliverables` — files created or modified, with relative paths.
 - `## Verification` — concrete commands or checks the executor must run. Prefer agent-runnable checks: commands, automated flows, API calls, screenshots, DOM checks, logs, or equivalent objective checks. Do not use manual visual check or user walkthrough language for objective behavior unless no reasonable agent-side tool or fallback can judge it. Mark verification human-only only with that reason.
-- `## Done signal` — literal instruction to write `STEP-NN--DONE.md` on full pass and commit if in a git repo.
+- `## Done signal` — literal: "On full verification pass, write `STEP-NN--DONE.md` in this directory per the README done-file schema, then commit if in a git repo."
 
 ### STEP-NN--DONE.md schema
 
 - `# STEP-NN DONE: <title>`
 - `## Summary` — 3–6 bullets covering what was built, key decisions, capability-use outcome (`used`, `best-effort fallback`, `blocked`, or `not needed`), tests added or not applicable, and human-verification outcome when applicable.
-- `## Files changed` — bullet list of paths.
-- `## Verification results` — one line per check using `✅`, `❌`, or `⚠ skipped`.
-- `## Gotchas for next step` — full-sentence notes the next step needs.
+- `## Files changed` — bullet list of paths, including any executor-added test files.
+- `## Verification results` — one line per check using `✅`, `❌`, or `⚠ skipped`, plus the command/check.
+- `## Gotchas for next step` — anything the next step needs to know: APIs added, signatures differing from step assumptions, env vars required, known limitations, test-file locations and fixtures. Write full sentences so a fresh-context agent can absorb it without reading upstream code.
 - `## Commit` — if in a git repo, record `same commit as this done-file — subject: step-NN: <title>`; otherwise `not a git repo — no commit`. The executor's final handoff should print the actual SHA separately because a tracked file cannot contain its own final commit ID without changing that ID.
 
 ### BLOCKED.md schema
 
-- `# BLOCKED: STEP-NN <title>`
-- `## What happened` — one paragraph explaining the blocker.
-- `## Evidence` — bullet list of concrete observations.
-- `## Earliest safe recovery point` — one of `resume current step`, `re-emit steps from current step`, `redo master plan`, `redo task`, or `start new milestone`, plus one-sentence reasoning.
-- `## Workspace state` — what changed, what is safe to keep, what is safe to discard, and any verification already run.
-- `## Suggested user actions` — 2 or 3 labeled options, with exactly one recommended.
+- `# BLOCKED: STEP-NN <title>` — names the incomplete step that hit the blocker.
+- `## What happened` — one paragraph explaining what stopped execution and why the current step could not safely continue.
+- `## Evidence` — bullet list of concrete observations: commands, errors, file paths, API responses, or contradictions in the codebase / environment.
+- `## Earliest safe recovery point` — one of `resume current step`, `re-emit steps from current step`, `redo master plan`, `redo task`, or `start new milestone`, plus one-sentence reasoning. The executor must never point recovery at a later step while the current step has no done-file.
+- `## Workspace state` — bullets covering files already touched, what is safe to keep, what is safe to discard, and any verification already run.
+- `## Suggested user actions` — 2 or 3 labeled options (`A.`, `B.`, optional `C.`), with exactly one marked recommended. Each option names the exact next move: edit, emit-step invocation, master-plan invocation, clarify-task invocation, or external action.
 
 ### Optional review artifacts
 
@@ -132,10 +132,10 @@ Done-files may define review scope, but they are not correctness evidence. Revie
 - `# Review NN: <reviewed milestone title>`
 - `## Reviewed scope` — the reviewed milestone path, whether the run covered the whole milestone or a specific completed step, and any explicit exclusions.
 - `## Review basis` — review run date, reviewer / agent label if known, done-files used to derive scope, and files actually inspected.
-- `## Seeded concerns` — optional. Each entry records the original concern, its source, the outcome (`confirmed`, `disproved`, `not applicable`, or `inconclusive`), and one-sentence reasoning.
-- `## Independent findings` — numbered list ordered by severity. Each finding includes: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
-- `## Deferred or acceptable tradeoffs` — optional.
-- `## Cross-cutting or unrelated observations` — optional.
+- `## Seeded concerns` — optional. Concerns injected by the user as pasted text and/or referenced files. Each entry records the original concern, its source, the outcome (`confirmed`, `disproved`, `not applicable`, or `inconclusive`), and one-sentence reasoning.
+- `## Independent findings` — numbered list, ordered by severity. Each finding includes: severity, issue, evidence, affected files or interfaces, and recommended disposition (`carry forward`, `defer`, `cross-cutting`, or `acceptable tradeoff pending user confirmation`).
+- `## Deferred or acceptable tradeoffs` — optional. Items the reviewer believes may be acceptable for now but should be explicit.
+- `## Cross-cutting or unrelated observations` — optional. Important observations that do not cleanly belong in the next milestone derived from this review.
 - `## Recommended follow-up milestones` — 1 to 3 concrete next-milestone options, with exactly one recommended.
 
 ### raw-review-prompt-NN.md schema
