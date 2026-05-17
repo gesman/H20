@@ -1,37 +1,98 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_SOURCE_DIR="/home/gesman/PROJECTS/H20/H20"
-SOURCE_DIR="${1:-${PULLH20_SOURCE_DIR:-${DEFAULT_SOURCE_DIR}}}"
-PROJECT_DIR="$(pwd -P)"
-TARGET_DIR="${PROJECT_DIR}/H20"
-PRESERVE_PROJECT_DIR_REGEX='^[0-9]+-.*$'
-PRESERVE_PROJECT_DIR_DISPLAY='/[0-9]+-.*/'
-
 if [[ $# -gt 1 ]]; then
     echo "Usage: $0 [source_dir]"
     echo "Optional env override: PULLH20_SOURCE_DIR=/path/to/H20/H20"
     exit 1
 fi
 
-declare -a RSYNC_EXCLUDES=(--exclude="__pycache__/" --exclude="*.pyc")
+PROJECT_DIR="$(pwd -P)"
+TARGET_DIR="${PROJECT_DIR}/H20"
+PRESERVE_PROJECT_DIR_REGEX='^[0-9]+-.*$'
+PRESERVE_PROJECT_DIR_DISPLAY='/[0-9]+-.*/'
+
+declare -a RSYNC_EXCLUDES=(--exclude="/Extras/pullh20" --exclude="__pycache__/" --exclude="*.pyc")
 declare -a PRESERVED_DIR_NAMES=()
-declare -a STATIC_PRESERVE_IF_PRESENT=("UserDocs" "Reviews")
+declare -a STATIC_PRESERVE_IF_PRESENT=("UserDocs" "Reviews" "RawPrompts")
 
-confirm_non_project_dir() {
-    local reply=""
+resolve_script_path() {
+    local script_path="${BASH_SOURCE[0]}"
+    local resolved_path=""
+    local script_dir=""
+    local link_target=""
+    local hop_count=0
 
-    if [[ -d "${PROJECT_DIR}/.git" || -f "${PROJECT_DIR}/.gitignore" ]]; then
+    if [[ "${script_path}" != */* ]]; then
+        resolved_path="$(command -v "${script_path}" 2>/dev/null || true)"
+        if [[ -n "${resolved_path}" ]]; then
+            script_path="${resolved_path}"
+        fi
+    fi
+
+    while :; do
+        if [[ "${script_path}" != /* ]]; then
+            script_path="${PWD}/${script_path}"
+        fi
+
+        script_dir="$(cd "$(dirname "${script_path}")" && pwd -P)"
+        script_path="${script_dir}/$(basename "${script_path}")"
+
+        if [[ ! -L "${script_path}" ]]; then
+            printf '%s\n' "${script_path}"
+            return 0
+        fi
+
+        hop_count=$((hop_count + 1))
+        if [[ ${hop_count} -gt 40 ]]; then
+            echo "Too many symlink levels resolving ${BASH_SOURCE[0]}" >&2
+            return 1
+        fi
+
+        link_target="$(readlink "${script_path}")"
+        if [[ "${link_target}" == /* ]]; then
+            script_path="${link_target}"
+        else
+            script_path="${script_dir}/${link_target}"
+        fi
+    done
+}
+
+SCRIPT_PATH="$(resolve_script_path)"
+SCRIPT_DIR="$(cd "$(dirname "${SCRIPT_PATH}")" && pwd -P)"
+SCRIPT_SOURCE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+
+default_source_dir() {
+    local home_source_dir=""
+
+    if [[ -n "${HOME:-}" ]]; then
+        home_source_dir="${HOME}/PROJECTS/H20/H20"
+        if [[ -d "${home_source_dir}" ]]; then
+            printf '%s\n' "${home_source_dir}"
+            return 0
+        fi
+    fi
+
+    if [[ -d "${SCRIPT_SOURCE_DIR}" && "${SCRIPT_SOURCE_DIR}" != "${TARGET_DIR}" ]]; then
+        printf '%s\n' "${SCRIPT_SOURCE_DIR}"
         return 0
     fi
 
-    printf "Doesn't look like a project dir, proceed (y/N)? "
-    IFS= read -r reply
-    if [[ "${reply}" == "y" || "${reply}" == "Y" ]]; then
+    if [[ -n "${home_source_dir}" ]]; then
+        printf '%s\n' "${home_source_dir}"
+    else
+        printf '%s\n' "${SCRIPT_SOURCE_DIR}"
+    fi
+}
+
+SOURCE_DIR="${1:-${PULLH20_SOURCE_DIR:-$(default_source_dir)}}"
+
+require_project_dir() {
+    if [[ -e "${PROJECT_DIR}/.git" ]]; then
         return 0
     fi
 
-    echo "exited per user request"
+    echo "Current directory must be a git project root containing .git: ${PROJECT_DIR}"
     exit 1
 }
 
@@ -39,6 +100,10 @@ path_is_preserved() {
     local rel_path="$1"
     local first_component="${rel_path%%/*}"
     local preserved_dir=""
+
+    if [[ ${#PRESERVED_DIR_NAMES[@]} -eq 0 ]]; then
+        return 1
+    fi
 
     for preserved_dir in "${PRESERVED_DIR_NAMES[@]}"; do
         if [[ "${first_component}" == "${preserved_dir}" ]]; then
@@ -53,6 +118,16 @@ path_is_generated_cache() {
     local rel_path="$1"
 
     if [[ "${rel_path}" == *__pycache__/* || "${rel_path}" == *.pyc ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+path_is_excluded_payload_file() {
+    local rel_path="$1"
+
+    if [[ "${rel_path}" == "Extras/pullh20" ]]; then
         return 0
     fi
 
@@ -76,7 +151,7 @@ path_in_list() {
 add_preserved_dir() {
     local dir_name="$1"
 
-    if path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
+    if [[ ${#PRESERVED_DIR_NAMES[@]} -gt 0 ]] && path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
         return 0
     fi
 
@@ -109,9 +184,9 @@ report_sync_results() {
             continue
         fi
 
-        if [[ ${#line} -ge 12 && "${line:11:1}" == " " ]]; then
-            item="${line:0:11}"
-            path="${line:12}"
+        if [[ "${line}" =~ ^([^[:space:]]+)[[:space:]]+(.+)$ ]]; then
+            item="${BASH_REMATCH[1]}"
+            path="${BASH_REMATCH[2]}"
             update_type="${item:0:1}"
             file_type="${item:1:1}"
 
@@ -142,10 +217,13 @@ report_sync_results() {
         if path_is_generated_cache "${rel_path}"; then
             continue
         fi
+        if path_is_excluded_payload_file "${rel_path}"; then
+            continue
+        fi
         if path_is_preserved "${rel_path}"; then
             continue
         fi
-        if path_in_list "${rel_path}" "${changed_paths[@]}"; then
+        if [[ ${#changed_paths[@]} -gt 0 ]] && path_in_list "${rel_path}" "${changed_paths[@]}"; then
             continue
         fi
         echo "[unchanged] ${rel_path}"
@@ -161,10 +239,12 @@ if [[ ! -d "${SOURCE_DIR}" ]]; then
     exit 1
 fi
 
-confirm_non_project_dir
+require_project_dir
 mkdir -p "${TARGET_DIR}"
+SOURCE_DIR="$(cd "${SOURCE_DIR}" && pwd -P)"
+TARGET_DIR="$(cd "${TARGET_DIR}" && pwd -P)"
 
-if [[ ! -x "$(command -v rsync)" ]]; then
+if ! command -v rsync >/dev/null 2>&1; then
     echo "Required command not found: rsync"
     exit 1
 fi
@@ -200,7 +280,7 @@ echo "Source: ${SOURCE_DIR}/"
 echo "Target: ${TARGET_DIR}/"
 echo "Preserving local project directories matching ${PRESERVE_PROJECT_DIR_DISPLAY}"
 for dir_name in "${STATIC_PRESERVE_IF_PRESENT[@]}"; do
-    if path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
+    if [[ ${#PRESERVED_DIR_NAMES[@]} -gt 0 ]] && path_in_list "${dir_name}" "${PRESERVED_DIR_NAMES[@]}"; then
         echo "Preserving local directory /${dir_name}/"
     fi
 done
@@ -217,8 +297,27 @@ if [[ -s "${DRY_RUN_FILE}" ]]; then
         "${SOURCE_DIR}/" "${TARGET_DIR}/"
 fi
 
+helper_copy="${TARGET_DIR}/Extras/pullh20"
+if [[ -f "${helper_copy}" || -L "${helper_copy}" ]]; then
+    rm -f "${helper_copy}"
+    echo "[deleted] Extras/pullh20"
+fi
+
 report_sync_results "${DRY_RUN_FILE}"
 
-completed_at="$(date '+%Y-%m-%dT%H:%M:%S%:z')"
+current_timestamp() {
+    local timestamp=""
+    local offset=""
+
+    timestamp="$(date '+%Y-%m-%dT%H:%M:%S')"
+    offset="$(date '+%z')"
+    if [[ "${offset}" =~ ^([+-][0-9][0-9])([0-9][0-9])$ ]]; then
+        offset="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+    fi
+
+    printf '%s%s\n' "${timestamp}" "${offset}"
+}
+
+completed_at="$(current_timestamp)"
 echo "Synced ${SOURCE_DIR}/ -> ${TARGET_DIR}/"
 echo "Completed at: ${completed_at}"

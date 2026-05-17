@@ -91,9 +91,10 @@ Notes:
 
 `pullh20` usage:
 
-- run from a target project root that contains or should contain `./H20/`
-- no args: syncs from the default local source directory compiled into the helper, or from `PULLH20_SOURCE_DIR` if set
+- run from a target project root that contains `.git` and contains or should contain `./H20/`
+- no args: syncs from `PULLH20_SOURCE_DIR` if set, otherwise from `$HOME/PROJECTS/H20/H20` when present, otherwise from the H20 directory that contains this helper
 - `pullh20 <source-dir>`: syncs from an explicit source payload directory
 - preserves local milestone directories matching `NN-<kebab>/`
-- preserves local `UserDocs/` and `Reviews/` directories when present
+- preserves local `UserDocs/`, `Reviews/`, and `RawPrompts/` directories when present
+- does not copy `Extras/pullh20` into target projects, and removes prior copied instances
 - requires `rsync`
