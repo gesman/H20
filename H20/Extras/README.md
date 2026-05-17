@@ -95,5 +95,5 @@ Notes:
 - no args: syncs from the default local source directory compiled into the helper, or from `PULLH20_SOURCE_DIR` if set
 - `pullh20 <source-dir>`: syncs from an explicit source payload directory
 - preserves local milestone directories matching `NN-<kebab>/`
-- preserves local `RawPrompts/` and `Reviews/` directories when present
+- preserves local `UserDocs/` and `Reviews/` directories when present
 - requires `rsync`

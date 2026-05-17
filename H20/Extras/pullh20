@@ -16,7 +16,7 @@ fi
 
 declare -a RSYNC_EXCLUDES=(--exclude="__pycache__/" --exclude="*.pyc")
 declare -a PRESERVED_DIR_NAMES=()
-declare -a STATIC_PRESERVE_IF_PRESENT=("RawPrompts" "Reviews")
+declare -a STATIC_PRESERVE_IF_PRESENT=("UserDocs" "Reviews")
 
 confirm_non_project_dir() {
     local reply=""

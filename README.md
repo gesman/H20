@@ -120,8 +120,8 @@ Inside a target project using H20:
 │   ├── pullh20
 │   ├── README.md
 │   └── helpers/
-├── RawPrompts/                    (optional raw-source stash; non-contractual)
-│   └── 0_placeholder-for-raw-user-prompts.txt
+├── UserDocs/                      (optional user-docs stash; non-contractual)
+│   └── 0_placeholder-for-user-docs.txt
 ├── Reviews/                       (optional review snapshots; non-contractual)
 │   └── 01-<first-milestone>/
 │       ├── REVIEW-01.md
@@ -158,7 +158,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - **Blocked handoff:** optional milestone-root `BLOCKED.md`. At most one unresolved blocker file per milestone.
 - **Review snapshots:** optional `./H20/Reviews/NN-<kebab>/REVIEW-NN.md`, where the directory name matches the reviewed milestone and the review file number is local to that review directory.
 - **Review follow-up prompts:** optional `./H20/Reviews/NN-<kebab>/raw-review-prompt-NN.md`, paired with the review snapshot that produced it.
-- **Raw source stash:** optional `./H20/RawPrompts/` for user-managed input files. H20 does not read it automatically; pass files from it explicitly.
+- **User docs stash:** optional `./H20/UserDocs/` for user-managed source files. H20 does not read it automatically; pass files from it explicitly.
 
 ## Schemas
 
@@ -290,7 +290,7 @@ These overlays do **not** change the `_LOCKED.md` hard stop, done-file recovery 
    Shortcuts for coding agents that support file references:
    `@H20/1-clarify-task.md @idea-notes.txt`
    `@H20/1-clarify-task.md @raw-prompt1.txt @raw-prompt2.txt`
-   `@H20/1-clarify-task.md @raw-prompts/`
+   `@H20/1-clarify-task.md @H20/UserDocs/`
    If a blocked milestone needs a fresh task pass, include the previous raw prompt plus `BLOCKED.md`:
    `@H20/1-clarify-task.md @H20/01-my-feature/raw-prompt.txt @H20/01-my-feature/BLOCKED.md`
    Recommended after success: clear or reset context before stage 2. In most coding agents: `/clear`.
@@ -386,7 +386,7 @@ The generated `raw-review-prompt-NN.md` is intentionally narrower than the full 
 
 ### pullh20
 
-Purpose: update a project's copied `./H20/` payload from this source repo while preserving local milestone directories, `RawPrompts/`, and `Reviews/`.
+Purpose: update a project's copied `./H20/` payload from this source repo while preserving local milestone directories, `UserDocs/`, and `Reviews/`.
 
 Syntax:
 

@@ -21,8 +21,8 @@ Inside a target project using H20:
 │   ├── pullh20
 │   ├── README.md
 │   └── helpers/
-├── RawPrompts/
-│   └── 0_placeholder-for-raw-user-prompts.txt
+├── UserDocs/
+│   └── 0_placeholder-for-user-docs.txt
 ├── Reviews/
 │   └── 01-<first-milestone>/
 │       ├── REVIEW-01.md
@@ -59,7 +59,7 @@ Milestones start at `01`, two-digit zero-padded, kebab-case title. Steps and the
 - Blocked handoff: optional milestone-root `BLOCKED.md`.
 - Review snapshots: optional `./H20/Reviews/NN-<kebab>/REVIEW-NN.md`, where the review directory name matches the reviewed milestone.
 - Review follow-up prompts: optional `./H20/Reviews/NN-<kebab>/raw-review-prompt-NN.md`, paired with the review snapshot that produced it.
-- Raw source stash: optional `./H20/RawPrompts/` for user-managed input files. H20 does not read it automatically; pass files from it explicitly.
+- User docs stash: optional `./H20/UserDocs/` for user-managed source files. H20 does not read it automatically; pass files from it explicitly.
 
 ## Schemas
 
